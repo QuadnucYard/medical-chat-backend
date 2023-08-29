@@ -19,6 +19,25 @@ from app.routers import deps
 router = APIRouter()
 
 
+@router.post("/auth/register", response_model=models.UserRead)
+async def register(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    user_in: models.UserRegister
+):
+    """
+    Create new user.
+    """
+    user = await crud.user.get_by_username(db, username=user_in.username)
+    if user:
+        raise HTTPException(
+            status_code=400,
+            detail="The user with this username already exists in the system.",
+        )
+    user = await crud.user.create(db, obj_in=models.UserCreate.from_orm(user_in))
+    return user
+
+
 @router.post("/auth/login", response_model=models.Token)
 async def login_access_token(
     db: AsyncSession = Depends(deps.get_db),

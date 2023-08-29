@@ -36,3 +36,14 @@ class UserUpdate(UserBase):
 
 class UserCreate(UserUpdate):
     create_time: datetime = Field(default_factory=datetime.now)
+
+
+class UserRegister(SQLModel):
+    username: str
+    password: str
+    email: str = Field(default="", index=True)
+    phone: str = Field(default="", index=True)
+    name: str = ""
+
+
+__all__ = ["User", "UserRead", "UserUpdate", "UserCreate", "UserRegister"]
