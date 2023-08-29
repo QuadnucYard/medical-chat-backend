@@ -1,0 +1,7 @@
+fastapi
+passlib
+psycopg2
+pydantic
+python_jose
+sqlmodel
+starlette
