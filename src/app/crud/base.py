@@ -2,7 +2,7 @@ from typing import Any, Generic, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
-from sqlmodel import Session, SQLModel, select
+from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
@@ -29,21 +29,20 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         stmt = select(self.model).offset(offset).limit(limit)
         return (await db.exec(stmt)).all() # type: ignore
 
-    """
-    def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
+    async def create(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)
         db_obj = self.model(**obj_in_data)  # type: ignore
         db.add(db_obj)
-        db.commit()
-        db.refresh(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
         return db_obj
 
-    def update(
+    async def update(
         self,
-        db: Session,
+        db: AsyncSession,
         *,
         db_obj: ModelType,
-        obj_in: Union[UpdateSchemaType, Dict[str, Any]]
+        obj_in: UpdateSchemaType | dict[str, Any]
     ) -> ModelType:
         obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):
@@ -54,12 +53,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
         db.add(db_obj)
-        db.commit()
-        db.refresh(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
         return db_obj
 
-    def remove(self, db: Session, *, id: int) -> ModelType:
-        obj = db.query(self.model).get(id)
-        db.delete(obj)
-        db.commit()
-        return obj"""
+    async def remove(self, db: AsyncSession, *, id: int) -> ModelType:
+        obj = await db.get(self.model, id)
+        assert obj
+        await db.delete(obj)
+        await db.commit()
+        return obj

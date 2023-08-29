@@ -1,7 +1,6 @@
 from datetime import timedelta
-from typing import Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, Form, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -20,39 +19,30 @@ from app.routers import deps
 router = APIRouter()
 
 
-@router.post("/auth/register")
-async def register(
-    db: AsyncSession = Depends(deps.get_db), form_data: OAuth2PasswordRequestForm = Depends()
-):
-    await crud.user.create(
-        db,
-        obj_in=models.UserCreate(
-            uname=form_data.username, password=form_data.password, email="1@qq.com"
-        ),
-    )
-
-
-@router.post("/auth/access-token", response_model=models.Token)
+@router.post("/auth/login", response_model=models.Token)
 async def login_access_token(
-    db: AsyncSession = Depends(deps.get_db), form_data: OAuth2PasswordRequestForm = Depends()
-) -> Any:
+    db: AsyncSession = Depends(deps.get_db),
+    form_data: OAuth2PasswordRequestForm = Depends(),
+):
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    '''user = crud.user.authenticate(db, email=form_data.username, password=form_data.password)
+    user = await crud.user.authenticate(
+        db, username=form_data.username, password=form_data.password
+    )
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
-    elif not crud.user.is_active(user):
-        raise HTTPException(status_code=400, detail="Inactive user")
+    elif not crud.user.is_valid(user):
+        raise HTTPException(status_code=400, detail="Invalid user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": security.create_access_token(user.id, expires_delta=access_token_expires),
         "token_type": "bearer",
-    }'''
+    }
 
 
-@router.post("/auth/test-token", response_model=models.UserRead)
-def test_token(current_user: models.User = Depends(deps.get_current_user)) -> Any:
+@router.post("/auth", response_model=models.UserRead)
+def test_token(current_user: models.User = Depends(deps.get_current_user)):
     """
     Test access token
     """
@@ -77,8 +67,7 @@ def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
         email_to=user.email, email=email, token=password_reset_token
     )
     return {"msg": "Password recovery email sent"}
-'''
-'''
+
 @router.post("/reset-password/", response_model=schemas.Msg)
 def reset_password(
     token: str = Body(...),
