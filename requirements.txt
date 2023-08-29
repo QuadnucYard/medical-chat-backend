@@ -1,3 +1,5 @@
+asyncpg
+bcrypt
 fastapi
 passlib
 psycopg2

@@ -44,6 +44,9 @@ class Settings(BaseSettings):
             host=values["POSTGRES_SERVER"],
             path=f"/{values.get('POSTGRES_DB', '')}",
         )
+    
+    FIRST_SUPERUSER: str = "root"
+    FIRST_SUPERUSER_PASSWORD: str = "root"
 
     class Config:
         case_sensitive = True
