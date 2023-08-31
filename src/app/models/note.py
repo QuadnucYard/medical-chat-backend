@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -15,7 +16,7 @@ class NoteBase(SQLModel):
 
 
 class Note(NoteBase, table=True):
-    id: int = Field(None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
 
 
 class NoteRead(NoteBase):

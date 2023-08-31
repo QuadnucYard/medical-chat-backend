@@ -1,9 +1,9 @@
 from sqlmodel import SQLModel
 
-from ..models import *
-from .. import crud, models
-from ..core.config import settings
-from ..db.session import SessionLocal, engine
+from app.models import *
+from app import crud, models
+from app.core.config import settings
+from app.db.session import SessionLocal, engine
 
 
 async def init_db():
@@ -11,7 +11,7 @@ async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
-
+    
     async with SessionLocal() as db:
         user = await crud.user.get_by_username(db, username="root")
         if not user:

@@ -1,35 +1,43 @@
+from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
 
 if TYPE_CHECKING:
-    ...
+    from .user import User
+from app.models.shared_link import SharedLink
+from .message import Message
 
 
 class ChatBase(SQLModel):
-    user_id: int
-    valid: bool = True
-    share: int
-    update_time: datetime
+    user_id: int | None = Field(default=None, foreign_key="user.id")
     title: str
+    update_time: datetime
     create_time: datetime
+    delete_time: datetime | None = None  # None as valid
 
 
 class Chat(ChatBase, table=True):
-    id: int = Field(None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
+    user: User = Relationship(back_populates="chats")
+    messages: list[Message] = Relationship(back_populates="chat")
+    links: list[SharedLink] = Relationship(back_populates="chat")
 
 
 class ChatRead(ChatBase):
     id: int
+    user: User
 
 
-class ChatUpdate(ChatBase):
+class ChatReadWithMessages(ChatRead):
+    messages: list[Message] = Relationship(back_populates="chat")
+
+
+class ChatCreate(ChatBase):
+    create_time: datetime = Field(default_factory=datetime.now)
     update_time: datetime = Field(default_factory=datetime.now)
 
 
-class ChatCreate(ChatUpdate):
-    create_time: datetime = Field(default_factory=datetime.now)
-
-
-__all__ = ["Chat", "ChatRead", "ChatUpdate", "ChatCreate"]
+__all__ = ["Chat", "ChatRead", "ChatReadWithMessages", "ChatCreate"]

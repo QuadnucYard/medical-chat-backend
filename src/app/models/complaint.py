@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -18,7 +19,7 @@ class ComplaintBase(SQLModel):
 
 
 class Complaint(ComplaintBase, table=True):
-    id: int = Field(None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
 
 
 class ComplaintRead(ComplaintBase):

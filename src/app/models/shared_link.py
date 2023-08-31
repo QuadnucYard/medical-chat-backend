@@ -1,35 +1,39 @@
+from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
 
 if TYPE_CHECKING:
-    ...
+    from app.models.chat import Chat
+from .shared_user import SharedUser
 
 
-class Shared_linkBase(SQLModel):
-    link: int
-    expire_time: datetime
-    uses: int
-    readonly: bool
-    valid: bool
+class SharedLinkBase(SQLModel):
+    link: str
     create_time: datetime
+    expire_time: datetime
+    max_uses: int
+    readonly: bool
+    valid: bool = True
 
 
-class Shared_link(Shared_linkBase, table=True):
-    chat_id: int = Field(None, foreign_key=True)
+class SharedLink(SharedLinkBase, table=True):
+    id: int = Field(default=None, primary_key=True)
+    chat_id: int = Field(default=None, foreign_key="chat.id")
+
+    chat: Chat = Relationship(back_populates="links")
+
+    user_links: list[SharedUser] = Relationship(back_populates="link")
 
 
-class Shared_linkRead(Shared_linkBase):
+class SharedLinkRead(SharedLinkBase):
     id: int
 
 
-class Shared_linkUpdate(Shared_linkBase):
-    ...
+class SharedLinkCreate(SQLModel):
+    create_time: datetime = Field(default_factory=datetime.now)
 
 
-class Shared_linkCreate(Shared_linkUpdate):
-    send_time: datetime = Field(default_factory=datetime.now)
-
-
-__all__ = ["Shared_link", "Shared_linkUpdate", "Shared_linkCreate", "Shared_linkRead"]
+__all__ = ["SharedLink", "SharedLinkCreate", "SharedLinkRead"]

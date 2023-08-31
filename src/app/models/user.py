@@ -1,10 +1,12 @@
+from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
-if TYPE_CHECKING:
-    ...
+if TYPE_CHECKING or True:
+    from .chat import Chat
+    from .shared_user import SharedUser
 
 
 class UserBase(SQLModel):
@@ -21,8 +23,12 @@ class UserBase(SQLModel):
 
 
 class User(UserBase, table=True):
-    id: int = Field(None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
     hashed_password: str
+
+    chats: list[Chat] = Relationship(back_populates="user")
+
+    links: list[SharedUser] = Relationship(back_populates="user")
 
 
 class UserRead(UserBase):
