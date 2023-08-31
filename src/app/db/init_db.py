@@ -1,9 +1,9 @@
 from sqlmodel import SQLModel
 
-import app.models
-from app import crud, models
-from app.core.config import settings
-from app.db.session import SessionLocal, engine
+from ..models import *
+from .. import crud, models
+from ..core.config import settings
+from ..db.session import SessionLocal, engine
 
 
 async def init_db():
