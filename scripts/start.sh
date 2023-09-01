@@ -1,1 +1,1 @@
-cd src && uvicorn app.main:app --reload
+cd src && uvicorn app.main:app --host '0.0.0.0' --reload
