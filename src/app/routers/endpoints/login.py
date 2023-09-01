@@ -23,11 +23,13 @@ router = APIRouter()
 async def register(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    user_in: models.UserRegister
+    username: str = Form(),
+    password: str = Form(),
 ):
     """
     Create new user.
     """
+    user_in = models.UserRegister(username=username, password=password)
     user = await crud.user.get_by_username(db, username=user_in.username)
     if user:
         raise HTTPException(
