@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class SharedUser(SQLModel, table=True):
     user_id: int | None = Field(default=None, foreign_key="user.id", primary_key=True)
-    link_id: int | None = Field(default=None, foreign_key="sharedlink.id", primary_key=True)
+    link_id: str | None = Field(default=None, foreign_key="sharedlink.id", primary_key=True)
     accquire_time: datetime = Field(default_factory=datetime.now)
     access_time: datetime = Field(default_factory=datetime.now)
     valid: bool = True
