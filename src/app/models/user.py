@@ -1,12 +1,13 @@
-from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
 
-if TYPE_CHECKING or True:
+if TYPE_CHECKING:
     from .chat import Chat
+    from .role_perm import Role
     from .shared_user import SharedUser
+    from .complaint import Complaint
 
 
 class UserBase(SQLModel):
@@ -19,6 +20,7 @@ class UserBase(SQLModel):
     login_time: datetime | None = None
     update_time: datetime
     is_superuser: bool = False
+    role_id: int | None = Field(default=None, foreign_key="role.id")
     valid: bool = True
 
 
@@ -26,9 +28,15 @@ class User(UserBase, table=True):
     id: int = Field(default=None, primary_key=True)
     hashed_password: str
 
-    chats: list[Chat] = Relationship(back_populates="user")
-
-    links: list[SharedUser] = Relationship(back_populates="user")
+    role: "Role" = Relationship(back_populates="users")
+    chats: list["Chat"] = Relationship(back_populates="user")
+    links: list["SharedUser"] = Relationship(back_populates="user")
+    posted_complaints: list["Complaint"] = Relationship(
+        back_populates="user", sa_relationship_kwargs=dict(foreign_keys="Complaint.user_id")
+    )
+    resolved_complaints: list["Complaint"] = Relationship(
+        back_populates="admin", sa_relationship_kwargs=dict(foreign_keys="Complaint.admin_id")
+    )
 
 
 class UserRead(UserBase):

@@ -1,4 +1,3 @@
-from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -7,8 +6,8 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from .user import User
-from app.models.shared_link import SharedLink
-from .message import Message
+    from app.models.shared_link import SharedLink
+    from .message import Message
 
 
 class ChatBase(SQLModel):
@@ -21,18 +20,18 @@ class ChatBase(SQLModel):
 
 class Chat(ChatBase, table=True):
     id: int = Field(default=None, primary_key=True)
-    user: User = Relationship(back_populates="chats")
-    messages: list[Message] = Relationship(back_populates="chat")
-    links: list[SharedLink] = Relationship(back_populates="chat")
+    user: "User" = Relationship(back_populates="chats")
+    messages: list["Message"] = Relationship(back_populates="chat")
+    links: list["SharedLink"] = Relationship(back_populates="chat")
 
 
 class ChatRead(ChatBase):
     id: int
-    user: User
+    user: "User"
 
 
 class ChatReadWithMessages(ChatRead):
-    messages: list[Message] = Relationship(back_populates="chat")
+    messages: list["Message"] = Relationship(back_populates="chat")
 
 
 class ChatCreate(ChatBase):

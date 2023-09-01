@@ -1,13 +1,11 @@
-from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
 
-
 if TYPE_CHECKING:
-    from app.models.user import User
-    from app.models.shared_link import SharedLink
+    from .shared_link import SharedLink
+    from .user import User
 
 
 class SharedUser(SQLModel, table=True):
@@ -17,8 +15,8 @@ class SharedUser(SQLModel, table=True):
     access_time: datetime = Field(default_factory=datetime.now)
     valid: bool = True
 
-    user: User = Relationship(back_populates="links")
-    link: SharedLink = Relationship(back_populates="user_links")
+    user: "User" = Relationship(back_populates="links")
+    link: "SharedLink" = Relationship(back_populates="user_links")
 
 
 __all__ = ["SharedUser"]

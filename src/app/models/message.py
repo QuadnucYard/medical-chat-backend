@@ -1,4 +1,3 @@
-from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -25,7 +24,7 @@ class MessageBase(SQLModel):
 class Message(MessageBase, table=True):
     id: int = Field(default=None, primary_key=True)
 
-    chat: Chat = Relationship(back_populates="messages")
+    chat: "Chat" = Relationship(back_populates="messages")
 
 
 class MessageRead(MessageBase):
