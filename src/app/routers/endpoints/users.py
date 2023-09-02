@@ -47,7 +47,7 @@ async def create_user(
     return user
 
 
-@router.get("/me", response_model=models.UserReadWithPerm)
+@router.get("/me", response_model=models.UserRead)
 async def read_user_me(
     db: AsyncSession = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -55,8 +55,7 @@ async def read_user_me(
     """
     Get current user.
     """
-    perms = await crud.user.get_perms(db, current_user)
-    return await db.run_sync(lambda _: models.UserReadWithPerm.from_orm(current_user, dict(perms=perms)))
+    return await db.run_sync(lambda _: models.UserRead.from_orm(current_user))
 
 
 @router.put("/me", response_model=models.UserRead)

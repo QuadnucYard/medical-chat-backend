@@ -7,7 +7,7 @@ from app.models.role_perm import PermRead
 
 if TYPE_CHECKING:
     from . import Chat, Complaint, PermRead, Role, RoleRead, SharedUser
-
+from . import RoleRead
 
 class UserBase(SQLModel):
     username: str
@@ -40,7 +40,7 @@ class User(UserBase, table=True):
 
 class UserRead(UserBase):
     id: int
-    # role: "RoleRead"
+    role: "RoleRead"
 
 
 class UserReadWithPerm(UserRead):
