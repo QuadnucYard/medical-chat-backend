@@ -27,3 +27,10 @@ async def init_db():
                 role_id=default_role.id,
             )
             user = await crud.user.create(db, obj_in=user_in)
+
+        chat = Chat(user=user, title="")
+        db.add(chat)
+        await db.commit()
+        await db.refresh(chat)
+        
+

@@ -20,7 +20,7 @@ class SharedLinkBase(SQLModel):
 
 
 class SharedLink(SharedLinkBase, table=True):
-    id: str | None = Field(default_factory=lambda: str(uuid1()).replace("-", ""))
+    id: str | None = Field(default_factory=lambda: str(uuid1()).replace("-", ""), primary_key=True)
     chat_id: int | None = Field(default=None, foreign_key="chat.id")
     create_time: datetime | None = Field(
         default_factory=lambda: datetime.now(timezone.utc),

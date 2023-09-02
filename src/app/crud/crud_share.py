@@ -1,14 +1,10 @@
-from typing import Any, Type
+from datetime import datetime, timezone
 from pydantic import BaseModel
 from sqlmodel import select
-
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.core.security import get_password_hash, verify_password
 from app.crud.base import CRUDBase
-from app.models import SharedLink, SharedLinkCreate
-from app.models import SharedUser
-from app.models.user import User, UserCreate, UserUpdate
+from app.models import SharedLink, SharedLinkCreate, SharedUser, User
 
 
 class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, BaseModel]):
@@ -31,7 +27,7 @@ class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, BaseModel]):
         await db.commit()
         await db.refresh(su)
         return su
-    
+
     async def add_share(self, db: AsyncSession, link: SharedLink, user: User):
         link.use_times += 1
         db.add(link)
@@ -39,6 +35,9 @@ class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, BaseModel]):
         await db.refresh(link)
         await self.consume_share(db, user=user, link=link)
         return link
+    
+    def is_expired(self, link: SharedLink):
+        return link.expire_time < datetime.now(timezone.utc)
 
 
 share = CRUDShare(SharedLink)

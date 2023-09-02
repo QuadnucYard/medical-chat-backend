@@ -36,20 +36,24 @@ async def get_share(
     *,
     db: AsyncSession = Depends(deps.get_db),
     id: str,
+    user: models.User | None = Depends(deps.get_current_active_user_opt),
 ):
     "Request, and try consuming a shared link."
     link = await crud.share.get(db, id=id)
     if not link:
         raise HTTPException(403, "This link is not existent!")
-    user = await deps.get_current_active_user()
-    if not user:
+    if crud.share.is_expired(link):
+        raise HTTPException(403, "The link has expired!")
+    if not user or not user.valid:
         if link.max_uses != -1:
-            raise HTTPException(403, "This link is not existent!")
+            raise HTTPException(403, "You can't access this link!")
         return link
-    if user in link.user_links:  # User can access links accessed before
+    # Check whether the user is the owner 
+    if await crud.share.is_user_shared(db, user.id, id):  # User can access links accessed before
         return link
     if link.use_times >= link.max_uses:  # No uses can be offered
-        raise HTTPException(403, "This link is not existent!")
+        raise HTTPException(403, "This link is exhausted!")
+    # TODO more checks: valid, expire
     return await crud.share.add_share(db, link, user)
 
 
