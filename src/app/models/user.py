@@ -3,11 +3,10 @@ from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.models.role_perm import PermRead
+
 if TYPE_CHECKING:
-    from .chat import Chat
-    from .role_perm import Role
-    from .shared_user import SharedUser
-    from .complaint import Complaint
+    from . import Chat, Complaint, PermRead, Role, RoleRead, SharedUser
 
 
 class UserBase(SQLModel):
@@ -41,6 +40,12 @@ class User(UserBase, table=True):
 
 class UserRead(UserBase):
     id: int
+    # role: "RoleRead"
+
+
+class UserReadWithPerm(UserRead):
+    perms: list["PermRead"]
+    ...
 
 
 class UserUpdate(UserBase):
@@ -60,4 +65,4 @@ class UserRegister(SQLModel):
     name: str = ""
 
 
-__all__ = ["User", "UserRead", "UserUpdate", "UserCreate", "UserRegister"]
+__all__ = ["User", "UserRead", "UserReadWithPerm", "UserUpdate", "UserCreate", "UserRegister"]

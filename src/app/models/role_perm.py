@@ -22,10 +22,18 @@ class Role(RoleBase, table=True):
     perms: list["Perm"] = Relationship(back_populates="roles", link_model=RolePermLink)
     users: list["User"] = Relationship(back_populates="role")
 
+
 class RoleRead(RoleBase):
     id: int
+    perms: list["PermRead"]
+
+
+class RoleCreate(RoleBase):
     perms: list["Perm"]
 
+
+class RoleUpdate(RoleCreate):
+    ...
 
 class PermBase(SQLModel):
     name: str
@@ -43,4 +51,23 @@ class PermRead(PermBase):
     id: int
 
 
-__all__ = ["Perm", "PermRead", "Role", "RoleRead", "RolePermLink"]
+class PermCreate(PermBase):
+    ...
+
+
+class PermUpdate(PermBase):
+    ...
+
+
+
+__all__ = [
+    "Perm",
+    "PermRead",
+    "Role",
+    "RoleRead",
+    "RoleCreate",
+    "RoleUpdate",
+    "RolePermLink",
+    "PermCreate",
+    "PermUpdate",
+]
