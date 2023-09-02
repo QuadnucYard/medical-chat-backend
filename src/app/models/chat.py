@@ -6,7 +6,7 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from .user import User
-    from app.models.shared_link import SharedLink
+    from ..models.shared_link import SharedLink
     from .message import Message
 
 
