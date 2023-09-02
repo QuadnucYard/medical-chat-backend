@@ -19,5 +19,18 @@ class Feedback(SQLModel, table=True):
     # msg: "Message" = Relationship(back_populates="user_links")
     # user: "User" = Relationship(back_populates="msg_links")
 
+class FeedbackRead(SQLModel):
+    msg_id: int
+    user_id: int
+    mark_like: bool
+    mark_dislike: bool
+    content: str
 
-__all__ = ["Feedback"]
+class FeedbackUpdate(SQLModel):
+    msg_id: int
+    user_id: int | None = None
+    mark_like: bool
+    mark_dislike: bool
+    content: str
+
+__all__ = ["Feedback", "FeedbackRead", "FeedbackUpdate"]
