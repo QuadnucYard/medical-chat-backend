@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, Body, Depends, Form, HTTPException
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -68,6 +68,13 @@ def test_token(current_user: models.User = Depends(deps.get_current_user)):
     Test access token
     """
     return current_user
+
+
+@router.post("/auth/logout")
+def logout():
+    response = Response()
+    response.delete_cookie("token")
+    return response
 
 
 '''
