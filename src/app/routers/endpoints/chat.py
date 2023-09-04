@@ -1,9 +1,10 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud, models
 from app.db.utils import from_orm_async
+from app.models.message import MessageType
 from app.routers import deps
 from app.service import chat_service
 
@@ -68,3 +69,17 @@ async def get_chats(
 ):
     """Get chats of current user."""
     return await crud.chat.get_by_user(db, user=user)
+
+
+@router.post("/{chat_id}", response_model=models.MessageRead)
+async def send_question(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    chat_id: int,
+    question: str = Body(),
+    hint: str | None = Body(default=None),
+    current_user: models.User = Depends(deps.get_current_active_user),
+):
+    return await chat_service.qa(
+        db, chat_id=chat_id, question=question, hint=hint, user=current_user
+    )
