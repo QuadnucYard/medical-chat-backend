@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, TypeGuard
 from sqlmodel import SQLModel, select
 
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -9,9 +9,12 @@ from app.models.user import User
 
 
 class CRUDChat(CRUDBase[Chat, ChatCreate, SQLModel]):
-    async def get_by_userid(self, db: AsyncSession, *, user: User):
-        return await db.run_sync(lambda _: user.chats)
+    async def get_by_user(self, db: AsyncSession, *, user: User):
+        chats = await db.run_sync(lambda _: user.chats)
+        return list(filter(self.is_valid, chats))
 
+    def is_valid(self, chat: Chat | None) -> TypeGuard[Chat]:
+        return chat is not None and not chat.delete_time
 
 
 chat = CRUDChat(Chat)

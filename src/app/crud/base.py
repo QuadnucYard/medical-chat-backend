@@ -36,11 +36,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_obj
 
     async def create(self, db: AsyncSession, obj_in: CreateSchemaType) -> ModelType:
-        db_obj = self.model.from_orm(obj_in)
-        db.add(db_obj)
-        await db.commit()
-        await db.refresh(db_obj)
-        return db_obj
+        obj_in_data = jsonable_encoder(obj_in)
+        db_obj = self.model(**obj_in_data)  # type: ignore
+        return await self.add(db, db_obj)
 
     async def update(
         self, db: AsyncSession, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]
@@ -58,9 +56,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await db.refresh(db_obj)
         return db_obj
 
+    async def delete(self, db: AsyncSession, db_obj: ModelType):
+        await db.delete(db_obj)
+        await db.commit()
+        return db_obj
+
     async def remove(self, db: AsyncSession, *, id: Any) -> ModelType:
         obj = await db.get(self.model, id)
         assert obj
-        await db.delete(obj)
-        await db.commit()
-        return obj
+        return await self.delete(db, obj)
