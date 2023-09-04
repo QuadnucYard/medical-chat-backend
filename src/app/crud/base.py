@@ -24,25 +24,26 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def get(self, db: AsyncSession, id: Any) -> ModelType | None:
         return await db.get(self.model, id)
-    
-    async def gets(self, db: AsyncSession, *, offset: int = 0, limit: int = 100 ) -> list[ModelType]:
-        stmt = select(self.model).offset(offset).limit(limit)
-        return (await db.exec(stmt)).all() # type: ignore
 
-    async def create(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> ModelType:
-        obj_in_data = jsonable_encoder(obj_in)
-        db_obj = self.model(**obj_in_data)  # type: ignore
+    async def gets(self, db: AsyncSession, *, offset: int = 0, limit: int = 100) -> list[ModelType]:
+        stmt = select(self.model).offset(offset).limit(limit)
+        return (await db.exec(stmt)).all()  # type: ignore
+
+    async def add(self, db: AsyncSession, db_obj: ModelType):
+        db.add(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
+        return db_obj
+
+    async def create(self, db: AsyncSession, obj_in: CreateSchemaType) -> ModelType:
+        db_obj = self.model.from_orm(obj_in)
         db.add(db_obj)
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
 
     async def update(
-        self,
-        db: AsyncSession,
-        *,
-        db_obj: ModelType,
-        obj_in: UpdateSchemaType | dict[str, Any]
+        self, db: AsyncSession, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]
     ) -> ModelType:
         obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):
