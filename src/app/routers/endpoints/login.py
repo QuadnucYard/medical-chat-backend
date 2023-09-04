@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, Body, Depends, Form, HTTPException
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -36,7 +36,7 @@ async def register(
             status_code=400,
             detail="The user with this username already exists in the system.",
         )
-    user = await crud.user.create(db, obj_in=models.UserCreate.from_orm(user_in))
+    user = await crud.user.create(db, obj_in=models.UserCreate.from_orm(user_in, dict(role_id=1)))
     return user
 
 
@@ -68,6 +68,13 @@ def test_token(current_user: models.User = Depends(deps.get_current_user)):
     Test access token
     """
     return current_user
+
+
+@router.post("/auth/logout")
+def logout():
+    response = Response()
+    response.delete_cookie("token")
+    return response
 
 
 '''

@@ -5,9 +5,6 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from .user import User
-from sqlalchemy.orm import relationship
-
-# relationship(,)
 
 
 class ComplaintBase(SQLModel):

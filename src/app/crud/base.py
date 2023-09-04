@@ -1,4 +1,4 @@
-from typing import Any, Generic, Type, TypeVar
+from typing import Any, Generic, Sequence, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
@@ -34,13 +34,19 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
+    
+    async def adds(self, db: AsyncSession, db_objs: Sequence[ModelType]):
+        db.add_all(db_objs)
+        await db.commit()
+        for db_obj in db_objs:
+            await db.refresh(db_obj)
+        return db_objs
+
 
     async def create(self, db: AsyncSession, obj_in: CreateSchemaType) -> ModelType:
-        db_obj = self.model.from_orm(obj_in)
-        db.add(db_obj)
-        await db.commit()
-        await db.refresh(db_obj)
-        return db_obj
+        obj_in_data = jsonable_encoder(obj_in)
+        db_obj = self.model(**obj_in_data)  # type: ignore
+        return await self.add(db, db_obj)
 
     async def update(
         self, db: AsyncSession, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]
@@ -53,14 +59,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         for field in obj_data:
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
-        db.add(db_obj)
+        return await self.add(db, db_obj)
+
+    async def delete(self, db: AsyncSession, db_obj: ModelType):
+        await db.delete(db_obj)
         await db.commit()
-        await db.refresh(db_obj)
         return db_obj
 
     async def remove(self, db: AsyncSession, *, id: Any) -> ModelType:
         obj = await db.get(self.model, id)
         assert obj
-        await db.delete(obj)
-        await db.commit()
-        return obj
+        return await self.delete(db, obj)

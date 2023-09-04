@@ -7,7 +7,7 @@ from app.models.role_perm import PermRead
 
 if TYPE_CHECKING:
     from . import Chat, Complaint, PermRead, Role, RoleRead, SharedUser
-from . import RoleRead
+
 
 class UserBase(SQLModel):
     username: str
@@ -15,9 +15,9 @@ class UserBase(SQLModel):
     phone: str = Field(default="", index=True)
     name: str = ""
     avatar_url: str = ""
-    create_time: datetime
+    create_time: datetime= Field(default_factory=datetime.now)
     login_time: datetime | None = None
-    update_time: datetime
+    update_time: datetime= Field(default_factory=datetime.now)
     is_superuser: bool = False
     role_id: int | None = Field(default=None, foreign_key="role.id")
     valid: bool = True
@@ -40,12 +40,11 @@ class User(UserBase, table=True):
 
 class UserRead(UserBase):
     id: int
+    create_time: datetime
+    update_time: datetime
+
+class UserReadWithRole(UserRead):
     role: "RoleRead"
-
-
-class UserReadWithPerm(UserRead):
-    perms: list["PermRead"]
-    ...
 
 
 class UserUpdate(UserBase):
@@ -65,4 +64,8 @@ class UserRegister(SQLModel):
     name: str = ""
 
 
-__all__ = ["User", "UserRead", "UserReadWithPerm", "UserUpdate", "UserCreate", "UserRegister"]
+__all__ = ["User", "UserRead", "UserReadWithRole", "UserUpdate", "UserCreate", "UserRegister"]
+
+from .role_perm import RoleRead
+
+UserRead.update_forward_refs()

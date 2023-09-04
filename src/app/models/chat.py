@@ -6,15 +6,13 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from .user import User
-    from app.models.shared_link import SharedLink
-    from .message import Message
+    from .shared_link import SharedLink
+    from .message import Message, MessageRead
 
 
 class ChatBase(SQLModel):
     user_id: int | None = Field(default=None, foreign_key="user.id")
     title: str
-    update_time: datetime
-    create_time: datetime
     delete_time: datetime | None = None  # None as valid
 
 
@@ -30,16 +28,21 @@ class Chat(ChatBase, table=True):
 class ChatRead(ChatBase):
     id: int
     user_id: int
-    user: "User"
+    update_time: datetime
+    create_time: datetime
 
 
 class ChatReadWithMessages(ChatRead):
-    messages: list["Message"] = Relationship(back_populates="chat")
+    messages: list["MessageRead"]
 
 
-class ChatCreate(ChatBase):
-    user_id: int
+class ChatCreate(SQLModel):
+    user_id: int | None = None
     title: str
 
 
 __all__ = ["Chat", "ChatRead", "ChatReadWithMessages", "ChatCreate"]
+
+from .message import MessageRead
+
+ChatReadWithMessages.update_forward_refs()
