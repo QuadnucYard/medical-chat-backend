@@ -20,6 +20,8 @@ class ChatBase(SQLModel):
 
 class Chat(ChatBase, table=True):
     id: int = Field(default=None, primary_key=True)
+    create_time: datetime = Field(default_factory=datetime.now)
+    update_time: datetime = Field(default_factory=datetime.now)
     user: "User" = Relationship(back_populates="chats")
     messages: list["Message"] = Relationship(back_populates="chat")
     links: list["SharedLink"] = Relationship(back_populates="chat")
@@ -27,6 +29,7 @@ class Chat(ChatBase, table=True):
 
 class ChatRead(ChatBase):
     id: int
+    user_id: int
     user: "User"
 
 
@@ -35,8 +38,8 @@ class ChatReadWithMessages(ChatRead):
 
 
 class ChatCreate(ChatBase):
-    create_time: datetime = Field(default_factory=datetime.now)
-    update_time: datetime = Field(default_factory=datetime.now)
+    user_id: int
+    title: str
 
 
 __all__ = ["Chat", "ChatRead", "ChatReadWithMessages", "ChatCreate"]

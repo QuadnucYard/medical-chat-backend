@@ -4,5 +4,6 @@ from .feedback import *
 from .message import *
 from .role_perm import *
 from .shared_link import *
+from .shared_user import *
 from .token import Token, TokenPayload
 from .user import *

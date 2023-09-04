@@ -1,11 +1,11 @@
 from typing import Any
-from sqlmodel import select
 
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ..core.security import get_password_hash, verify_password
-from ..crud.base import CRUDBase
-from ..models.user import User, UserCreate, UserUpdate
+from app.core.security import get_password_hash, verify_password
+from app.crud.base import CRUDBase
+from app.models import Perm, User, UserCreate, UserUpdate
 
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
@@ -47,6 +47,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
 
     def is_superuser(self, user: User) -> bool:
         return user.is_superuser
+    
+    async def get_perms(self, db: AsyncSession, user: User) -> list[Perm]:
+        return await db.run_sync(lambda _: user.role.perms)
 
 
 user = CRUDUser(User)
