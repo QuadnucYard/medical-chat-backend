@@ -6,15 +6,13 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from .user import User
-    from ..models.shared_link import SharedLink
+    from .shared_link import SharedLink
     from .message import Message
 
 
 class ChatBase(SQLModel):
     user_id: int | None = Field(default=None, foreign_key="user.id")
     title: str
-    update_time: datetime
-    create_time: datetime
     delete_time: datetime | None = None  # None as valid
 
 
@@ -30,6 +28,8 @@ class Chat(ChatBase, table=True):
 class ChatRead(ChatBase):
     id: int
     user_id: int
+    update_time: datetime
+    create_time: datetime
     user: "User"
 
 

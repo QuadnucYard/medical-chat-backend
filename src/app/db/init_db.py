@@ -34,15 +34,12 @@ async def init_db():
                 ),
             )
 
-        chat = Chat(user=user, title="")
-        db.add(chat)
-        await db.commit()
-        await db.refresh(chat)
-
-        # db.expire(user)
-        # await db.refresh(user, ["role"])
-        # all_roles = (await db.scalars(user.role.statement)).all()
-        # print(all_roles)
-        # print(user.role)
-        # print(await db.run_sync(lambda _: user.role))
-        # print("llll", user.role)
+        chat = await crud.chat.create(db, ChatCreate(user_id=user.id, title="FirstChat"))
+        msg1 = await crud.message.create(
+            db,
+            MessageCreate(chat_id=chat.id, type=MessageType.Question, content="Question content"),
+        )
+        msg2 = await crud.message.create(
+            db,
+            MessageCreate(chat_id=chat.id, type=MessageType.Answer, content="Answer content"),
+        )
