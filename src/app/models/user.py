@@ -15,9 +15,9 @@ class UserBase(SQLModel):
     phone: str = Field(default="", index=True)
     name: str = ""
     avatar_url: str = ""
-    create_time: datetime
+    create_time: datetime= Field(default_factory=datetime.now)
     login_time: datetime | None = None
-    update_time: datetime
+    update_time: datetime= Field(default_factory=datetime.now)
     is_superuser: bool = False
     role_id: int | None = Field(default=None, foreign_key="role.id")
     valid: bool = True
@@ -40,7 +40,8 @@ class User(UserBase, table=True):
 
 class UserRead(UserBase):
     id: int
-
+    create_time: datetime
+    update_time: datetime
 
 class UserReadWithRole(UserRead):
     role: "RoleRead"
