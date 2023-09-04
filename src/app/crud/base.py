@@ -51,10 +51,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         for field in obj_data:
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
-        db.add(db_obj)
-        await db.commit()
-        await db.refresh(db_obj)
-        return db_obj
+        return await self.add(db, db_obj)
 
     async def delete(self, db: AsyncSession, db_obj: ModelType):
         await db.delete(db_obj)
