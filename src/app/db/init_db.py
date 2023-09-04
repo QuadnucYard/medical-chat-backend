@@ -58,11 +58,28 @@ class Init:
             for _ in range(num)
         ]
 
+    async def init_feedbacks(self, db: AsyncSession, num: int):
+        superuser = self.users[0]
+        self.feedbacks = [
+            await crud.feedback.add(
+                db,
+                Feedback(
+                    user=superuser,
+                    msg=random.choice(self.messages),
+                    mark_like=random.choices((True, False), (0.5, 0.5))[0],
+                    mark_dislike=random.choices((True, False), (0.3, 0.7))[0],
+                    content=self.fake.sentence(),
+                ),
+            )
+            for _ in range(num)
+        ]
+
     async def __call__(self, db: AsyncSession):
         await self.init_perms(db)
         await self.init_users(db, 0)
         await self.init_chats(db, 10)
         await self.init_messages(db, 100)
+        await self.init_feedbacks(db, 50)
 
 
 async def init_db():
