@@ -1,5 +1,6 @@
 asyncpg
 bcrypt
+faker
 fastapi
 passlib
 psycopg2

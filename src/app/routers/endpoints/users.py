@@ -2,8 +2,8 @@ from fastapi import APIRouter, Body, Depends, Form, HTTPException
 from fastapi.encoders import jsonable_encoder
 from pydantic import EmailStr
 from sqlmodel.ext.asyncio.session import AsyncSession
+
 from app import crud, models
-from app.models.user import UserRead
 from app.routers import deps
 
 router = APIRouter()
@@ -47,7 +47,7 @@ async def create_user(
     return user
 
 
-@router.get("/me", response_model=UserRead)
+@router.get("/me", response_model=models.UserRead)
 async def read_user_me(
     db: AsyncSession = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -55,7 +55,7 @@ async def read_user_me(
     """
     Get current user.
     """
-    return current_user
+    return await db.run_sync(lambda _: models.UserRead.from_orm(current_user))
 
 
 @router.put("/me", response_model=models.UserRead)

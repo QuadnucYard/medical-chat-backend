@@ -5,11 +5,19 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python: Init data",
+      "type": "python",
+      "request": "launch",
+      "module": "app.init_data",
+      "justMyCode": true,
+      "cwd": "${workspaceFolder}/src"
+    },
+    {
       "name": "Python: FastAPI",
       "type": "python",
       "request": "launch",
       "module": "uvicorn",
-      "args": ["app.main:app", "--reload"],
+      "args": ["app.main:app", "--host", "0.0.0.0", "--reload"],
       "jinja": true,
       "justMyCode": true,
       "cwd": "${workspaceFolder}/src"

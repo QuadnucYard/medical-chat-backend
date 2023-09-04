@@ -1,4 +1,4 @@
-from typing import Any, Generic, Type, TypeVar
+from typing import Any, Generic, Sequence, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
@@ -24,25 +24,32 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def get(self, db: AsyncSession, id: Any) -> ModelType | None:
         return await db.get(self.model, id)
-    
-    async def gets(self, db: AsyncSession, *, offset: int = 0, limit: int = 100 ) -> list[ModelType]:
-        stmt = select(self.model).offset(offset).limit(limit)
-        return (await db.exec(stmt)).all() # type: ignore
 
-    async def create(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> ModelType:
-        obj_in_data = jsonable_encoder(obj_in)
-        db_obj = self.model(**obj_in_data)  # type: ignore
+    async def gets(self, db: AsyncSession, *, offset: int = 0, limit: int = 100) -> list[ModelType]:
+        stmt = select(self.model).offset(offset).limit(limit)
+        return (await db.exec(stmt)).all()  # type: ignore
+
+    async def add(self, db: AsyncSession, db_obj: ModelType):
         db.add(db_obj)
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
+    
+    async def adds(self, db: AsyncSession, db_objs: Sequence[ModelType]):
+        db.add_all(db_objs)
+        await db.commit()
+        for db_obj in db_objs:
+            await db.refresh(db_obj)
+        return db_objs
+
+
+    async def create(self, db: AsyncSession, obj_in: CreateSchemaType) -> ModelType:
+        obj_in_data = jsonable_encoder(obj_in)
+        db_obj = self.model(**obj_in_data)  # type: ignore
+        return await self.add(db, db_obj)
 
     async def update(
-        self,
-        db: AsyncSession,
-        *,
-        db_obj: ModelType,
-        obj_in: UpdateSchemaType | dict[str, Any]
+        self, db: AsyncSession, *, db_obj: ModelType, obj_in: UpdateSchemaType | dict[str, Any]
     ) -> ModelType:
         obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):
@@ -52,14 +59,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         for field in obj_data:
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
-        db.add(db_obj)
+        return await self.add(db, db_obj)
+
+    async def delete(self, db: AsyncSession, db_obj: ModelType):
+        await db.delete(db_obj)
         await db.commit()
-        await db.refresh(db_obj)
         return db_obj
 
     async def remove(self, db: AsyncSession, *, id: Any) -> ModelType:
         obj = await db.get(self.model, id)
         assert obj
-        await db.delete(obj)
-        await db.commit()
-        return obj
+        return await self.delete(db, obj)
