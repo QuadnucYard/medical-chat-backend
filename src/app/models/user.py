@@ -7,7 +7,7 @@ from app.models.role_perm import PermRead
 
 if TYPE_CHECKING:
     from . import Chat, Complaint, PermRead, Role, RoleRead, SharedUser
-from . import RoleRead
+
 
 class UserBase(SQLModel):
     username: str
@@ -66,3 +66,7 @@ class UserRegister(SQLModel):
 
 
 __all__ = ["User", "UserRead", "UserReadWithPerm", "UserUpdate", "UserCreate", "UserRegister"]
+
+from .role_perm import RoleRead
+
+UserRead.update_forward_refs()
