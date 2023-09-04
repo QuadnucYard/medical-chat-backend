@@ -40,12 +40,10 @@ class User(UserBase, table=True):
 
 class UserRead(UserBase):
     id: int
+
+
+class UserReadWithRole(UserRead):
     role: "RoleRead"
-
-
-class UserReadWithPerm(UserRead):
-    perms: list["PermRead"]
-    ...
 
 
 class UserUpdate(UserBase):
@@ -65,7 +63,7 @@ class UserRegister(SQLModel):
     name: str = ""
 
 
-__all__ = ["User", "UserRead", "UserReadWithPerm", "UserUpdate", "UserCreate", "UserRegister"]
+__all__ = ["User", "UserRead", "UserReadWithRole", "UserUpdate", "UserCreate", "UserRegister"]
 
 from .role_perm import RoleRead
 

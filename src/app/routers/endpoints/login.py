@@ -36,7 +36,7 @@ async def register(
             status_code=400,
             detail="The user with this username already exists in the system.",
         )
-    user = await crud.user.create(db, obj_in=models.UserCreate.from_orm(user_in))
+    user = await crud.user.create(db, obj_in=models.UserCreate.from_orm(user_in, dict(role_id=1)))
     return user
 
 

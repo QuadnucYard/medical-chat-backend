@@ -23,6 +23,16 @@ async def get_all_chats(
     return await crud.chat.gets(db, offset=offset, limit=limit)
 
 
+@router.get("/me", response_model=list[models.ChatRead])
+async def get_chats(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    user: models.User = Depends(deps.get_current_active_user),
+):
+    """Get chats of current user."""
+    return await crud.chat.get_by_user(db, user=user)
+
+
 @router.post("/", response_model=models.ChatRead)
 async def create_chat(
     *,
@@ -59,16 +69,6 @@ async def get_chat(
     """Get chat contents."""
     chat = await chat_service.access_chat(db, chat_id=id, user=current_user)
     return await from_orm_async(db, models.ChatReadWithMessages, chat)
-
-
-@router.get("/me", response_model=list[models.ChatRead])
-async def get_chats(
-    *,
-    db: AsyncSession = Depends(deps.get_db),
-    user: models.User = Depends(deps.get_current_active_user),
-):
-    """Get chats of current user."""
-    return await crud.chat.get_by_user(db, user=user)
 
 
 @router.post("/{chat_id}", response_model=models.MessageRead)
