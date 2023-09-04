@@ -30,10 +30,11 @@ class Message(MessageBase, table=True):
 class MessageRead(MessageBase):
     id: int
     send_time: datetime
+    chat_id: int
 
 
 class MessageCreate(MessageBase):
-    ...
+    chat_id: int
 
 
 __all__ = ["MessageType", "Message", "MessageRead", "MessageCreate"]
