@@ -1,25 +1,26 @@
-from fastapi import APIRouter, Body, Depends, Form, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.encoders import jsonable_encoder
 from pydantic import EmailStr
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from fastapi_pagination import Page
 from app import crud, models
 from app.routers import deps
 
 router = APIRouter()
 
 
-@router.get("/", response_model=list[models.UserRead])
+@router.get("/", response_model=Page[models.UserRead])
 async def read_users(
+    *,
     db: AsyncSession = Depends(deps.get_db),
-    offset: int = 0,
-    limit: int = 100,
+    q: deps.PageParams = Depends(),
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """
     Retrieve users.
     """
-    return await crud.user.gets(db, offset=offset, limit=limit)
+    return await crud.user.get_page(db, page=q)
 
 
 @router.post("/", response_model=models.UserRead)
@@ -38,12 +39,12 @@ async def create_user(
             status_code=400,
             detail="The user with this username already exists in the system.",
         )
-    
+
     user = await crud.user.create(db, obj_in=user_in)
-    '''if settings.EMAILS_ENABLED and user_in.email:
+    """if settings.EMAILS_ENABLED and user_in.email:
         send_new_account_email(
             email_to=user_in.email, username=user_in.email, password=user_in.password
-        )'''
+        )"""
     return user
 
 

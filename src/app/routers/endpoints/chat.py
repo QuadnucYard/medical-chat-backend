@@ -1,27 +1,25 @@
 from datetime import datetime
 from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi_pagination import Page
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud, models
-from app.db.utils import fetch_attrs, from_orm_async
+from app.db.utils import from_orm_async
 from app.routers import deps
 from app.service import chat_service
 
 router = APIRouter()
 
 
-@router.get("/", response_model=list[models.ChatRead])
+@router.get("/", response_model=Page[models.ChatRead])
 async def get_all_chats(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    offset: int = 0,
-    limit: int = 100,
+    q: deps.PageParams = Depends(),
     user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """(Admin) Get all chats."""
-    chats = await crud.chat.gets(db, offset=offset, limit=limit)
-    await fetch_attrs(db, chats, ["user"])
-    return chats
+    return await crud.chat.get_page(db, page=q)
 
 
 @router.get("/me", response_model=list[models.ChatRead])
