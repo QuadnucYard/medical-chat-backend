@@ -1,12 +1,13 @@
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
 
 if TYPE_CHECKING:
     from .chat import Chat
+    from .feedback import FeedbackRead
 
 
 class MessageType(Enum):
@@ -33,8 +34,17 @@ class MessageRead(MessageBase):
     chat_id: int
 
 
+class MessageReadWithFeedback(MessageRead):
+    own_feedback: Optional["FeedbackRead"]
+
+
 class MessageCreate(MessageBase):
     chat_id: int
 
 
-__all__ = ["MessageType", "Message", "MessageRead", "MessageCreate"]
+__all__ = ["MessageType", "Message", "MessageRead", "MessageReadWithFeedback", "MessageCreate"]
+
+from .feedback import FeedbackRead
+
+
+MessageReadWithFeedback.update_forward_refs()

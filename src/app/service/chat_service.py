@@ -1,10 +1,12 @@
 from faker import Faker
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
-from app.models.chat import Chat
-from app.models.message import MessageCreate, MessageType
-from app.models.user import User
+
 from app import crud
+from app.db.utils import from_orm_async
+from app.models import Chat, Feedback, FeedbackRead, MessageCreate, MessageType, User
+from app.models.chat import ChatReadWithMessages
+from app.models.message import MessageReadWithFeedback
 
 
 async def access_chat(
@@ -30,4 +32,24 @@ async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, us
     return await crud.message.create(
         db,
         MessageCreate(chat_id=chat_id, type=MessageType.Answer, content=ans_txt),
+    )
+
+
+async def get_chat_with_feedbacks(db: AsyncSession, chat: Chat, user: User):
+    def feedback_orm(fb: Feedback | None):
+        return FeedbackRead.from_orm(fb) if fb else None
+
+    return await from_orm_async(
+        db,
+        ChatReadWithMessages,
+        chat,
+        dict(
+            messages=[
+                MessageReadWithFeedback.from_orm(
+                    msg,
+                    dict(own_feedback=feedback_orm(await crud.feedback.get(db, (msg.id, user.id)))),
+                )
+                for msg in await db.run_sync(lambda _: chat.messages)
+            ]
+        ),
     )

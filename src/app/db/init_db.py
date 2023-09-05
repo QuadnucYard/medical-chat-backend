@@ -60,18 +60,19 @@ class Init:
 
     async def init_feedbacks(self, db: AsyncSession, num: int):
         superuser = self.users[0]
+        msg_samples = random.sample(self.messages, num)
         self.feedbacks = [
             await crud.feedback.add(
                 db,
                 Feedback(
                     user=superuser,
-                    msg=random.choice(self.messages),
+                    msg=msg,
                     mark_like=random.choices((True, False), (0.5, 0.5))[0],
                     mark_dislike=random.choices((True, False), (0.3, 0.7))[0],
-                    content=self.fake.sentence(),
+                    content=self.fake.sentence() if random.random() < 0.2 else "",
                 ),
             )
-            for _ in range(num)
+            for msg in msg_samples
         ]
 
     async def __call__(self, db: AsyncSession):
@@ -87,7 +88,7 @@ async def init_db():
     async with engine.begin() as conn:
         # await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
-
+        
     async with SessionLocal() as db:
         user = await crud.user.get_by_username(db, username="root")
         if not user:

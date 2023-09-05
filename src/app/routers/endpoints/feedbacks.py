@@ -27,6 +27,8 @@ async def update_feedback(
 ):
     """Update feedback of the user. Create feedback if necessary."""
     data.user_id = current_user.id
+    if data.mark_dislike:
+        data.mark_like = False  # Exclusive
     return await crud.feedback.create(db, obj_in=data)
 
 
