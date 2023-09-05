@@ -47,9 +47,6 @@ class UserRead(UserBase):
 class UserReadPartial(SQLModel):
     id: int
     username: str
-    email: str
-    phone: str
-    name: str
     avatar_url: str
 
 

@@ -28,12 +28,22 @@ class FeedbackRead(SQLModel):
     mark_like: bool
     mark_dislike: bool
     content: str
+    update_time: datetime
 
-class FeedbackUpdate(SQLModel):
-    msg_id: int
+
+class FeedbackReadWithMsgUser(FeedbackRead):
+    msg: "MessageRead"
+    user: "UserReadPartial"
+
+
+class FeedbackUpdate(FeedbackRead):
     user_id: int | None = None
-    mark_like: bool
-    mark_dislike: bool
-    content: str
 
-__all__ = ["Feedback", "FeedbackRead", "FeedbackUpdate"]
+
+__all__ = ["Feedback", "FeedbackRead", "FeedbackReadWithMsgUser", "FeedbackUpdate"]
+
+
+from .message import MessageRead
+from .user import UserReadPartial
+
+FeedbackReadWithMsgUser.update_forward_refs()

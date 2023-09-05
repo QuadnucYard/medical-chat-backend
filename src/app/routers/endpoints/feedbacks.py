@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud, models
+from app.db.utils import from_orm_async
 from app.routers import deps
 
 router = APIRouter()
 
 
-@router.get("/", response_model=list[models.FeedbackRead])
+@router.get("/", response_model=list[models.FeedbackReadWithMsgUser])
 async def get_feedbacks(
     *,
     db: AsyncSession = Depends(deps.get_db),
@@ -15,7 +16,8 @@ async def get_feedbacks(
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """(Admin) Get all feedbacks."""
-    return await crud.feedback.gets(db, offset=q.offset, limit=q.limit)
+    feedbacks = await crud.feedback.gets(db, offset=q.offset, limit=q.limit)
+    return await from_orm_async(db, models.FeedbackReadWithMsgUser, feedbacks)
 
 
 @router.post("/", response_model=models.FeedbackRead)
