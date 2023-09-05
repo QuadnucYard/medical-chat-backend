@@ -2,6 +2,7 @@ import random
 from typing import Any
 from faker import Faker
 from sqlmodel import SQLModel
+from app.db.utils import no_echo
 
 from app.models import *
 from app import crud
@@ -37,11 +38,25 @@ class Init:
                 ),
             )
         )
+        users = [
+            await crud.user.create(
+                db,
+                obj_in=UserCreate(
+                    username=self.fake.word(),
+                    password=self.fake.password(),
+                    email=self.fake.ascii_email() if random.random() < 0.3 else "",
+                    phone=self.fake.phone_number() if random.random() < 0.3 else "",
+                    name=self.fake.name() if random.random() < 0.2 else "",
+                    role_id=self.role_norm.id,
+                ),
+            )
+            for _ in range(num)
+        ]
+        self.users.extend(users)
 
     async def init_chats(self, db: AsyncSession, num: int):
-        superuser = self.users[0]
         self.chats = [
-            await crud.chat.add(db, Chat(user=superuser, title=self.fake.sentence()))
+            await crud.chat.add(db, Chat(user=random.choice(self.users), title=self.fake.sentence()))
             for _ in range(num)
         ]
 
@@ -59,13 +74,12 @@ class Init:
         ]
 
     async def init_feedbacks(self, db: AsyncSession, num: int):
-        superuser = self.users[0]
         msg_samples = random.sample(self.messages, num)
         self.feedbacks = [
             await crud.feedback.add(
                 db,
                 Feedback(
-                    user=superuser,
+                    user=random.choice(self.users),
                     msg=msg,
                     mark_like=random.choices((True, False), (0.5, 0.5))[0],
                     mark_dislike=random.choices((True, False), (0.3, 0.7))[0],
@@ -77,10 +91,10 @@ class Init:
 
     async def __call__(self, db: AsyncSession):
         await self.init_perms(db)
-        await self.init_users(db, 0)
-        await self.init_chats(db, 10)
-        await self.init_messages(db, 100)
-        await self.init_feedbacks(db, 50)
+        await self.init_users(db, 100)
+        await self.init_chats(db, 200)
+        await self.init_messages(db, 1000)
+        await self.init_feedbacks(db, 200)
 
 
 async def init_db():
@@ -88,9 +102,10 @@ async def init_db():
     async with engine.begin() as conn:
         # await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
-        
+
     async with SessionLocal() as db:
         user = await crud.user.get_by_username(db, username="root")
         if not user:
             ini = Init()
-            await ini(db)
+            with no_echo(engine):
+                await ini(db)
