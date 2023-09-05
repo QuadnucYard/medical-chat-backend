@@ -58,11 +58,29 @@ class Init:
             for _ in range(num)
         ]
 
+    async def init_feedbacks(self, db: AsyncSession, num: int):
+        superuser = self.users[0]
+        msg_samples = random.sample(self.messages, num)
+        self.feedbacks = [
+            await crud.feedback.add(
+                db,
+                Feedback(
+                    user=superuser,
+                    msg=msg,
+                    mark_like=random.choices((True, False), (0.5, 0.5))[0],
+                    mark_dislike=random.choices((True, False), (0.3, 0.7))[0],
+                    content=self.fake.sentence() if random.random() < 0.2 else "",
+                ),
+            )
+            for msg in msg_samples
+        ]
+
     async def __call__(self, db: AsyncSession):
         await self.init_perms(db)
         await self.init_users(db, 0)
         await self.init_chats(db, 10)
         await self.init_messages(db, 100)
+        await self.init_feedbacks(db, 50)
 
 
 async def init_db():
@@ -70,7 +88,7 @@ async def init_db():
     async with engine.begin() as conn:
         # await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
-
+        
     async with SessionLocal() as db:
         user = await crud.user.get_by_username(db, username="root")
         if not user:

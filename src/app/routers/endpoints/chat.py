@@ -68,7 +68,7 @@ async def get_chat(
 ):
     """Get chat contents."""
     chat = await chat_service.access_chat(db, chat_id=id, user=current_user)
-    return await from_orm_async(db, models.ChatReadWithMessages, chat)
+    return await chat_service.get_chat_with_feedbacks(db, chat=chat, user=current_user)
 
 
 @router.post("/{chat_id}", response_model=models.MessageRead)

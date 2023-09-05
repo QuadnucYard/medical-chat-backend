@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import ValidationError
+from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud, models
@@ -77,3 +78,7 @@ async def get_current_active_user_opt(
     current_user: models.User | None = Depends(get_current_user_opt),
 ) -> models.User | None:
     return current_user
+
+class QueryParams(SQLModel):
+    offset: int = 0
+    limit: int = 100
