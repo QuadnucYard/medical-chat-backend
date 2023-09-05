@@ -3,8 +3,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud, models
-from app.db.utils import from_orm_async
-from app.models.message import MessageType
+from app.db.utils import fetch_attrs, from_orm_async
 from app.routers import deps
 from app.service import chat_service
 
@@ -20,7 +19,9 @@ async def get_all_chats(
     user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """(Admin) Get all chats."""
-    return await crud.chat.gets(db, offset=offset, limit=limit)
+    chats = await crud.chat.gets(db, offset=offset, limit=limit)
+    await fetch_attrs(db, chats, ["user"])
+    return chats
 
 
 @router.get("/me", response_model=list[models.ChatRead])
@@ -30,7 +31,8 @@ async def get_chats(
     user: models.User = Depends(deps.get_current_active_user),
 ):
     """Get chats of current user."""
-    return await crud.chat.get_by_user(db, user=user)
+    chats = await crud.chat.get_by_user(db, user=user)
+    return await from_orm_async(db, models.ChatRead, chats)
 
 
 @router.post("/", response_model=models.ChatRead)
@@ -42,7 +44,8 @@ async def create_chat(
 ):
     """Create a chat of current user."""
     data.user_id = current_user.id
-    return await crud.chat.create(db, obj_in=data)
+    chat = await crud.chat.create(db, obj_in=data)
+    return await from_orm_async(db, models.ChatRead, chat)
 
 
 @router.delete("/{id}", response_model=str)
