@@ -54,9 +54,14 @@ class UserReadWithRole(UserRead):
     role: "RoleRead"
 
 
-class UserUpdate(UserBase):
+class UserUpdate(SQLModel):
+    username: str
+    email: str
+    phone: str
+    name: str
+    avatar_url: str
     password: str
-    update_time: datetime = Field(default_factory=datetime.now)
+    password2: str | None = None
 
 
 class UserCreate(UserUpdate):

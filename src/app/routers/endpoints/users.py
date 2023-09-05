@@ -5,6 +5,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from fastapi_pagination import Page
 from app import crud, models
+from app.core.security import verify_password
 from app.routers import deps
 
 router = APIRouter()
@@ -63,22 +64,30 @@ async def read_user_me(
 async def update_user_me(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    password: str = Form(None),
+    username: str = Form(None),
+    email: str = Form(None),
+    phone: str = Form(None),
     name: str = Form(None),
-    email: EmailStr = Form(None),
+    password: str = Form(None),
+    password2: str = Form(None),
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
     """
     Update own user.
     """
-    current_user_data = jsonable_encoder(current_user)
-    user_in = models.UserUpdate(**current_user_data)
-    if password is not None:
-        user_in.password = password
-    if name is not None:
-        user_in.name = name
-    if email is not None:
-        user_in.email = email
+    # check password
+    if not verify_password(password, current_user.hashed_password):
+        raise HTTPException(403, "The password is incorrect!")
+    if password2 and password != password2:
+        raise HTTPException(403, "The passwords are inconsistent!")
+    user_in = models.UserUpdate(
+        username=username or current_user.username,
+        email=email or current_user.email,
+        phone=phone or current_user.phone,
+        name=name or current_user.name,
+        avatar_url=current_user.avatar_url,
+        password=password,
+    )
     user = await crud.user.update(db, db_obj=current_user, obj_in=user_in)
     return user
 
