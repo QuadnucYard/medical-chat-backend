@@ -72,6 +72,18 @@ async def get_chat(
     return await chat_service.get_chat_with_feedbacks(db, chat=chat, user=current_user)
 
 
+@router.put("/{chat_id}", response_model=models.ChatRead)
+async def update_title(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    chat_id: int,
+    data: models.ChatUpdate,
+    current_user: models.User = Depends(deps.get_current_active_user),
+):
+    chat = await chat_service.update_title(db, chat_id=chat_id, user=current_user, title=data.title)
+    return await from_orm_async(db, models.ChatRead, chat)
+
+
 @router.post("/{chat_id}", response_model=models.MessageRead)
 async def send_question(
     *,

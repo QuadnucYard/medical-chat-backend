@@ -42,7 +42,11 @@ class ChatCreate(SQLModel):
     title: str
 
 
-__all__ = ["Chat", "ChatRead", "ChatReadWithMessages", "ChatCreate"]
+class ChatUpdate(SQLModel):
+    title: str
+
+
+__all__ = ["Chat", "ChatRead", "ChatReadWithMessages", "ChatCreate", "ChatUpdate"]
 
 from .message import MessageReadWithFeedback
 from .user import UserReadPartial
