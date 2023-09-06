@@ -1,25 +1,26 @@
-from fastapi import APIRouter, Body, Depends, Form, HTTPException
-from fastapi.encoders import jsonable_encoder
+from fastapi import APIRouter, Depends, Form, HTTPException
 from pydantic import EmailStr
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from fastapi_pagination import Page
 from app import crud, models
+from app.core.security import verify_password
 from app.routers import deps
 
 router = APIRouter()
 
 
-@router.get("/", response_model=list[models.UserRead])
+@router.get("/", response_model=Page[models.UserRead])
 async def read_users(
+    *,
     db: AsyncSession = Depends(deps.get_db),
-    offset: int = 0,
-    limit: int = 100,
+    q: deps.PageParams = Depends(),
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """
-    Retrieve users.
+    (Admin) Retrieve users.
     """
-    return await crud.user.gets(db, offset=offset, limit=limit)
+    return await crud.user.get_page(db, page=q)
 
 
 @router.post("/", response_model=models.UserRead)
@@ -30,7 +31,7 @@ async def create_user(
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """
-    Create new user.
+    (Admin) Create new user.
     """
     user = await crud.user.get_by_username(db, username=user_in.username)
     if user:
@@ -38,12 +39,12 @@ async def create_user(
             status_code=400,
             detail="The user with this username already exists in the system.",
         )
-    
+
     user = await crud.user.create(db, obj_in=user_in)
-    '''if settings.EMAILS_ENABLED and user_in.email:
+    """if settings.EMAILS_ENABLED and user_in.email:
         send_new_account_email(
             email_to=user_in.email, username=user_in.email, password=user_in.password
-        )'''
+        )"""
     return user
 
 
@@ -62,22 +63,32 @@ async def read_user_me(
 async def update_user_me(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    password: str = Form(None),
-    name: str = Form(None),
+    username: str = Form(None),
     email: EmailStr = Form(None),
+    phone: str = Form(None),
+    name: str = Form(None),
+    password: str = Form(),
+    password2: str = Form(None),
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
     """
     Update own user.
     """
-    current_user_data = jsonable_encoder(current_user)
-    user_in = models.UserUpdate(**current_user_data)
-    if password is not None:
-        user_in.password = password
-    if name is not None:
-        user_in.name = name
-    if email is not None:
-        user_in.email = email
+    # check password
+    if not password:
+        raise HTTPException(403, "You should send password!")
+    if not verify_password(password, current_user.hashed_password):
+        raise HTTPException(403, "The password is incorrect!")
+    if password2 and password != password2:
+        raise HTTPException(403, "The passwords are inconsistent!")
+    user_in = models.UserUpdate(
+        username=username or current_user.username,
+        email=email or current_user.email,
+        phone=phone or current_user.phone,
+        name=name or current_user.name,
+        avatar_url=current_user.avatar_url,
+        password=password,
+    )
     user = await crud.user.update(db, db_obj=current_user, obj_in=user_in)
     return user
 
@@ -108,7 +119,7 @@ async def update_user(
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """
-    Update a user.
+    (Admin) Update a user.
     """
     user = await crud.user.get(db, id=user_id)
     if not user:

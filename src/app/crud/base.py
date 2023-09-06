@@ -1,9 +1,13 @@
 from typing import Any, Generic, Sequence, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
+from fastapi_pagination.types import AsyncItemsTransformer
+from fastapi_pagination.ext.async_sqlalchemy import paginate
 from pydantic import BaseModel
-from sqlmodel import SQLModel, select
+from sqlmodel import SQLModel, select, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.routers.deps import PageParams
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -29,19 +33,32 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         stmt = select(self.model).offset(offset).limit(limit)
         return (await db.exec(stmt)).all()  # type: ignore
 
+    async def get_page(
+        self,
+        db: AsyncSession,
+        *,
+        page: PageParams,
+        transformer: AsyncItemsTransformer | None = None
+    ):
+        stmt = select(self.model)
+        if page.sort_by:
+            key = getattr(self.model, page.sort_by)
+            key = desc(key) if page.desc else key
+            stmt = stmt.order_by(key)
+        return await paginate(db, stmt, transformer=transformer)
+
     async def add(self, db: AsyncSession, db_obj: ModelType):
         db.add(db_obj)
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
-    
+
     async def adds(self, db: AsyncSession, db_objs: Sequence[ModelType]):
         db.add_all(db_objs)
         await db.commit()
         for db_obj in db_objs:
             await db.refresh(db_obj)
         return db_objs
-
 
     async def create(self, db: AsyncSession, obj_in: CreateSchemaType) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi_pagination import Page
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud, models
@@ -48,7 +49,7 @@ async def get_share(
         if link.max_uses != -1:
             raise HTTPException(403, "You can't access this link!")
         return link
-    # Check whether the user is the owner 
+    # Check whether the user is the owner
     if await crud.share.is_user_shared(db, user.id, id):  # User can access links accessed before
         return link
     if link.use_times >= link.max_uses:  # No uses can be offered
@@ -57,13 +58,12 @@ async def get_share(
     return await crud.share.add_share(db, link, user)
 
 
-@router.get("/", response_model=list[models.SharedLinkRead])
+@router.get("/", response_model=Page[models.SharedLinkRead])
 async def get_links(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    offset: int = 0,
-    limit: int = 100,
+    q: deps.PageParams = Depends(),
     user: models.User = Depends(deps.get_current_active_superuser),
 ):
     "(Admin) Get all shared links"
-    return await crud.share.gets(db, offset=offset, limit=limit)
+    return await crud.share.get_page(db, page=q)

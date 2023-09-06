@@ -2,6 +2,7 @@ asyncpg
 bcrypt
 faker
 fastapi
+fastapi_pagination
 passlib
 psycopg2
 pydantic

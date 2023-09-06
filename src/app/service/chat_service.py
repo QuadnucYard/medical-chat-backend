@@ -7,6 +7,7 @@ from app.db.utils import from_orm_async
 from app.models import Chat, Feedback, FeedbackRead, MessageCreate, MessageType, User
 from app.models.chat import ChatReadWithMessages
 from app.models.message import MessageReadWithFeedback
+from app.utils.sqlutils import time_now
 
 
 async def access_chat(
@@ -22,6 +23,9 @@ async def access_chat(
 
 async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, user: User):
     chat = await access_chat(db, chat_id=chat_id, user=user, allow_admin=False)
+    chat.update_time = time_now()
+    await crud.chat.add(db, chat)  # Update time
+
     await crud.message.create(
         db, MessageCreate(chat_id=chat_id, type=MessageType.Question, content=question)
     )
@@ -53,3 +57,10 @@ async def get_chat_with_feedbacks(db: AsyncSession, chat: Chat, user: User):
             ]
         ),
     )
+
+
+async def update_title(db: AsyncSession, chat_id: int, user: User, title: str):
+    chat = await access_chat(db, chat_id=chat_id, user=user)
+    chat.title = title
+    chat.update_time = time_now()
+    return await crud.chat.add(db, chat)

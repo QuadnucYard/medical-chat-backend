@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app.core.security import get_password_hash, verify_password
 from app.crud.base import CRUDBase
 from app.models import Perm, User, UserCreate, UserUpdate
-
+from app.utils.sqlutils import time_now
 
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     """def get_by_email(self, db: AsyncSession, *, email: str) -> Optional[User]:
@@ -30,10 +30,11 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             update_data = obj_in
         else:
             update_data = obj_in.dict(exclude_unset=True)
-        if update_data["password"]:
+        if update_data.get("password"):
             hashed_password = get_password_hash(update_data["password"])
             del update_data["password"]
             update_data["hashed_password"] = hashed_password
+        db_obj.update_time = time_now()
         return await super().update(db, db_obj=db_obj, obj_in=update_data)
 
     async def authenticate(self, db: AsyncSession, *, username: str, password: str) -> User | None:

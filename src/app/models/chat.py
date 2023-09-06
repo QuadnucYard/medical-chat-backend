@@ -5,7 +5,7 @@ from sqlmodel import Field, Relationship, SQLModel
 
 
 if TYPE_CHECKING:
-    from .user import User
+    from .user import User, UserReadPartial
     from .shared_link import SharedLink
     from .message import Message, MessageRead, MessageReadWithFeedback
 
@@ -30,6 +30,7 @@ class ChatRead(ChatBase):
     user_id: int
     update_time: datetime
     create_time: datetime
+    user: "UserReadPartial"
 
 
 class ChatReadWithMessages(ChatRead):
@@ -41,8 +42,14 @@ class ChatCreate(SQLModel):
     title: str
 
 
-__all__ = ["Chat", "ChatRead", "ChatReadWithMessages", "ChatCreate"]
+class ChatUpdate(SQLModel):
+    title: str
+
+
+__all__ = ["Chat", "ChatRead", "ChatReadWithMessages", "ChatCreate", "ChatUpdate"]
 
 from .message import MessageReadWithFeedback
+from .user import UserReadPartial
 
+ChatRead.update_forward_refs()
 ChatReadWithMessages.update_forward_refs()
