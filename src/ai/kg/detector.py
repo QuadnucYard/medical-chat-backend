@@ -2,7 +2,6 @@ from typing import Any, cast, overload
 import torch
 import numpy as np
 
-import transformers
 from transformers import BertTokenizer, BatchEncoding
 
 from models import JointBert
@@ -12,7 +11,7 @@ from labeldict import LabelDict
 class JointIntentSlotDetector:
     def __init__(
         self,
-        model,
+        model: JointBert,
         tokenizer: BertTokenizer,
         intent_dict: LabelDict,
         slot_dict: LabelDict,
