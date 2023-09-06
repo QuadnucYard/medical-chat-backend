@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, Form, HTTPException
-from fastapi.encoders import jsonable_encoder
 from pydantic import EmailStr
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -19,7 +18,7 @@ async def read_users(
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """
-    Retrieve users.
+    (Admin) Retrieve users.
     """
     return await crud.user.get_page(db, page=q)
 
@@ -32,7 +31,7 @@ async def create_user(
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """
-    Create new user.
+    (Admin) Create new user.
     """
     user = await crud.user.get_by_username(db, username=user_in.username)
     if user:
@@ -65,7 +64,7 @@ async def update_user_me(
     *,
     db: AsyncSession = Depends(deps.get_db),
     username: str = Form(None),
-    email: str = Form(None),
+    email: EmailStr = Form(None),
     phone: str = Form(None),
     name: str = Form(None),
     password: str = Form(None),
@@ -118,7 +117,7 @@ async def update_user(
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """
-    Update a user.
+    (Admin) Update a user.
     """
     user = await crud.user.get(db, id=user_id)
     if not user:

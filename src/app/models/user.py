@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
+from pydantic import EmailStr
 
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -11,9 +12,9 @@ if TYPE_CHECKING:
 
 class UserBase(SQLModel):
     username: str
-    email: str = Field(default="", index=True)
-    phone: str = Field(default="", index=True)
-    name: str = ""
+    email: EmailStr | None = Field(default=None, index=True)
+    phone: str | None = Field(default=None, index=True)
+    name: str | None = None
     avatar_url: str = ""
     create_time: datetime = Field(default_factory=datetime.now)
     login_time: datetime | None = None
@@ -55,28 +56,42 @@ class UserReadWithRole(UserRead):
 
 
 class UserUpdate(SQLModel):
-    username: str
-    email: str
-    phone: str
-    name: str
-    avatar_url: str
-    password: str
+    username: str | None = None
+    email: EmailStr | None = None
+    phone: str | None = None
+    name: str | None = None
+    avatar_url: str | None = None
+    password: str | None = None
     password2: str | None = None
 
 
-class UserCreate(UserUpdate):
-    create_time: datetime = Field(default_factory=datetime.now)
+class UserCreate(SQLModel):
+    username: str
+    email: EmailStr | None = None
+    phone: str | None = None
+    name: str | None = None
+    password: str
+    is_superuser: bool = False
+    role_id: int | None = None
 
 
 class UserRegister(SQLModel):
     username: str
     password: str
-    email: str = Field(default="", index=True)
+    email: EmailStr = Field(default="", index=True)
     phone: str = Field(default="", index=True)
     name: str = ""
 
 
-__all__ = ["User", "UserRead", "UserReadWithRole", "UserReadPartial", "UserUpdate", "UserCreate", "UserRegister"]
+__all__ = [
+    "User",
+    "UserRead",
+    "UserReadWithRole",
+    "UserReadPartial",
+    "UserUpdate",
+    "UserCreate",
+    "UserRegister",
+]
 
 from .role_perm import RoleRead
 

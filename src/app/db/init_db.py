@@ -44,9 +44,9 @@ class Init:
                 obj_in=UserCreate(
                     username=self.fake.word(),
                     password=self.fake.password(),
-                    email=self.fake.ascii_email() if random.random() < 0.3 else "",
-                    phone=self.fake.phone_number() if random.random() < 0.3 else "",
-                    name=self.fake.name() if random.random() < 0.2 else "",
+                    email=self.fake.ascii_email() if random.random() < 0.3 else None,
+                    phone=self.fake.phone_number() if random.random() < 0.3 else None,
+                    name=self.fake.name() if random.random() < 0.2 else None,
                     role_id=self.role_norm.id,
                 ),
             )
@@ -91,7 +91,7 @@ class Init:
 
     async def __call__(self, db: AsyncSession):
         await self.init_perms(db)
-        await self.init_users(db, 100)
+        await self.init_users(db, 50)
         await self.init_chats(db, 200)
         await self.init_messages(db, 1000)
         await self.init_feedbacks(db, 200)
