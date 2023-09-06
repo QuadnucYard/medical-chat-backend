@@ -17,6 +17,8 @@ class Answer:
 
     # 根据问题类型调用Search类查询neo4j数据库，并将直接查询结果返回
     def search_answer(self) -> list:
+        if not (self.question_type or self.entity):
+            return ""
         # 查询疾病的原因
         if self.question_type == "disease_cause":
             return self.searcher.search_entity(self.entity, "cause")
