@@ -67,7 +67,7 @@ async def update_user_me(
     email: EmailStr = Form(None),
     phone: str = Form(None),
     name: str = Form(None),
-    password: str = Form(None),
+    password: str = Form(),
     password2: str = Form(None),
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
@@ -75,6 +75,8 @@ async def update_user_me(
     Update own user.
     """
     # check password
+    if not password:
+        raise HTTPException(403, "You should send password!")
     if not verify_password(password, current_user.hashed_password):
         raise HTTPException(403, "The password is incorrect!")
     if password2 and password != password2:
