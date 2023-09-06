@@ -1,4 +1,5 @@
 from .crud_chat import chat
+from .crud_complaint import complaint
 from .crud_feedback import feedback
 from .crud_message import message
 from .crud_perm import perm
