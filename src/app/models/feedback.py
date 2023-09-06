@@ -39,8 +39,11 @@ class FeedbackReadWithMsgUser(FeedbackRead):
     user: "UserReadPartial"
 
 
-class FeedbackUpdate(FeedbackBase):
-    ...
+class FeedbackUpdate(SQLModel):
+    msg_id: int
+    mark_like: bool | None = None
+    mark_dislike: bool | None = None
+    content: str | None = None
 
 
 __all__ = ["Feedback", "FeedbackRead", "FeedbackReadWithMsgUser", "FeedbackUpdate"]
