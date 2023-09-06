@@ -78,7 +78,7 @@ async def send_question(
     db: AsyncSession = Depends(deps.get_db),
     chat_id: int,
     question: str = Body(),
-    hint: str | None = Body(default=None),
+    hint: str | None = Body(None),
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
     return await chat_service.qa(
