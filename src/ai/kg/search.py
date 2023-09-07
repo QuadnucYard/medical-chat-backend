@@ -14,22 +14,22 @@ class Search:
         )
 
     # 给定实体与特定的关系查找其他实体
-    def search_entity_relation(self, entity: str, relation: str) -> list[dict[str, Any]]:
+    def entity_relation(self, entity: str, relation: str) -> list[dict[str, Any]]:
         sql = "match(x)-[r:{1}]-(y) where x.name='{0}' return x.name,y.name"
         return self.g.run(sql.format(entity, relation)).data()
 
-    def search_entity_relations(self, entity: str, relations: list[str]) -> list[dict[str, Any]]:
-        return sum((self.search_entity_relation(entity, relation) for relation in relations), [])
+    def entity_relations(self, entity: str, relations: list[str]) -> list[dict[str, Any]]:
+        return sum((self.entity_relation(entity, relation) for relation in relations), [])
 
     # 给定实体的名称查找实体的属性
-    def search_entity(self, entity: str, properties: str) -> list[dict[str, Any]]:
+    def entity(self, entity: str, properties: str) -> list[dict[str, Any]]:
         sql = "match (x:Disease) where x.name = '{0}' return x.name, x.{1}"
         return self.g.run(sql.format(entity, properties)).data()
 
 
 if __name__ == "__main__":
     s = Search()
-    pprint(s.search_entity_relation("急腹症", "has_symptom"))
-    pprint(s.search_entity("急腹症", "cure_way"))
-    pprint(s.search_entity("感冒", "cure_way"))
-    pprint(s.search_entity("感冒", "prevent"))
+    pprint(s.entity_relation("急腹症", "has_symptom"))
+    pprint(s.entity("急腹症", "cure_way"))
+    pprint(s.entity("感冒", "cure_way"))
+    pprint(s.entity("感冒", "prevent"))

@@ -11,46 +11,46 @@ class Answer:
     def search_answer(self, question_type: str, entity: str) -> list[dict[str, Any]]:
         match question_type:
             case "disease_cause":  # 查询疾病的原因
-                return self.searcher.search_entity(entity, "cause")
+                return self.searcher.entity(entity, "cause")
 
             case "disease_prevent":  # 查询疾病的防御措施
-                return self.searcher.search_entity(entity, "prevent")
+                return self.searcher.entity(entity, "prevent")
 
             case "disease_lasttime":  # 查询疾病的持续时间
-                return self.searcher.search_entity(entity, "cure_lasttime")
+                return self.searcher.entity(entity, "cure_lasttime")
 
             case "disease_cureprob":  # 查询疾病的治愈概率
-                return self.searcher.search_entity(entity, "cured_prob")
+                return self.searcher.entity(entity, "cured_prob")
 
             case "disease_cureway":  # 查询疾病的治疗方式
-                return self.searcher.search_entity(entity, "cure_way")
+                return self.searcher.entity(entity, "cure_way")
 
             case "disease_easyget":  # 查询疾病的易发人群
-                return self.searcher.search_entity(entity, "easy_get")
+                return self.searcher.entity(entity, "easy_get")
 
             case "disease_desc":  # 查询疾病的相关介绍
-                return self.searcher.search_entity(entity, "desc")
+                return self.searcher.entity(entity, "desc")
 
             case "disease_symptom":  # 查询疾病有哪些症状
-                return self.searcher.search_entity_relation(entity, "has_symptom")
+                return self.searcher.entity_relation(entity, "has_symptom")
 
             case "symptom_disease":  # 查询症状会导致哪些疾病
-                return self.searcher.search_entity_relation(entity, "has_symptom")
+                return self.searcher.entity_relation(entity, "has_symptom")
 
             case "disease_acompany":  # 查询疾病的并发症
-                return self.searcher.search_entity_relation(entity, "acompany_with")
+                return self.searcher.entity_relation(entity, "acompany_with")
 
             case "disease_not_food":  # 查询疾病的忌口
-                return self.searcher.search_entity_relation(entity, "no_eat")
+                return self.searcher.entity_relation(entity, "no_eat")
 
             case "disease_do_food":  # 查询疾病建议吃的东西
-                return self.searcher.search_entity_relations(entity,["do_eat","recommand_eat"])
+                return self.searcher.entity_relations(entity, ["do_eat", "recommand_eat"])
 
             case "disease_drug":  # 查询疾病常用药品
-                return self.searcher.search_entity_relations(entity, "common_drug", "recommand_drug")
+                return self.searcher.entity_relations(entity, ["common_drug", "recommand_drug"])
 
             case "disease_check":  # 查询疾病应该进行的检查
-                return self.searcher.search_entity_relation(entity, "need_check")
+                return self.searcher.entity_relation(entity, "need_check")
 
         assert False
 

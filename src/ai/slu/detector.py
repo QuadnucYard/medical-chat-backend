@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, cast, overload
 
 import numpy as np
@@ -6,6 +7,13 @@ from transformers import BatchEncoding, BertTokenizer
 
 from .labeldict import LabelDict
 from .models import JointBert
+
+
+@dataclass
+class DetectResult:
+    text: str
+    intent: str
+    slots: dict[str, list[str]]
 
 
 class JointIntentSlotDetector:
@@ -106,29 +114,23 @@ class JointIntentSlotDetector:
         slot_probs : probability of a batch of tokens into slot labels, [batch, seq_len, slot_label_num], numpy array
         """
         slot_ids: np.ndarray = np.argmax(slot_probs, axis=-1)
-        return (
-            np.array(list(map(self.slot_dict.decode, slot_ids.flat)))
-            .reshape(slot_ids.shape)
-            .tolist()
-        )
+        decoder = np.vectorize(self.slot_dict.decode)
+        return decoder(slot_ids).tolist()
 
     def _predict_intent_labels(self, intent_probs: np.ndarray) -> list[str]:
         """
         intent_labels : probability of a batch of intent ids into intent labels, [batch, intent_label_num], numpy array
         """
         intent_ids: np.ndarray = np.argmax(intent_probs, axis=-1)
-        return (
-            np.array(list(map(self.intent_dict.decode, intent_ids.flat)))
-            .reshape(intent_ids.shape)
-            .tolist()
-        )
+        decoder = np.vectorize(self.intent_dict.decode)
+        return decoder(intent_ids).tolist()
 
     @overload
-    def detect(self, text: str, str_lower_case: bool = True) -> dict[str, Any]:
+    def detect(self, text: str, str_lower_case: bool = True) -> DetectResult:
         ...
 
     @overload
-    def detect(self, text: list[str], str_lower_case: bool = True) -> list[dict[str, Any]]:
+    def detect(self, text: list[str], str_lower_case: bool = True) -> DetectResult:
         ...
 
     def detect(self, text: str | list[str], str_lower_case: bool = True):
@@ -161,11 +163,11 @@ class JointIntentSlotDetector:
         intent_labels = self._predict_intent_labels(intent_probs)
 
         slot_values = self._extract_slots_from_labels(
-            inputs["input_ids"], slot_labels, inputs["attention_mask"]
+            inputs["input_ids"], slot_labels, inputs["attention_mask"] # type: ignore
         )
 
         outputs = [
-            {"text": text[i], "intent": intent_labels[i], "slots": slot_values[i]}
+            DetectResult(text=text[i], intent=intent_labels[i], slots=slot_values[i])
             for i in range(batch_size)
         ]
 
