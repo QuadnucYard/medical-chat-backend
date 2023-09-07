@@ -1,3 +1,4 @@
+import aiohttp
 from faker import Faker
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -8,7 +9,7 @@ from app.models import Chat, Feedback, FeedbackRead, MessageCreate, MessageType,
 from app.models.chat import ChatReadWithMessages
 from app.models.message import MessageReadWithFeedback
 from app.utils.sqlutils import time_now
-
+from app.core.config import settings
 
 async def access_chat(
     db: AsyncSession, chat_id: int, user: User, *, allow_admin: bool = True
@@ -30,8 +31,13 @@ async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, us
         db, MessageCreate(chat_id=chat_id, type=MessageType.Question, content=question)
     )
 
-    fake = Faker("zh_CN")
-    ans_txt = fake.text()
+    if settings.ENABLE_KGQA:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(settings.KGQA_API, data=question) as response:
+                ans_txt = await response.text()
+    else:
+        fake = Faker("zh_CN")
+        ans_txt: str = fake.text()
 
     return await crud.message.create(
         db,
