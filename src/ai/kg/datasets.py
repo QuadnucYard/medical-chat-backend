@@ -56,6 +56,7 @@ class IntentSlotDataset(Dataset):
         self.raw_data = raw_data
         self.data = []
         for item in tqdm(raw_data):
+            # TODO fix encoding
             slot_labels = get_slot_labels(item["text"], item["slots"], tokenizer)
             slot_ids = self.slot_label_dict.encode(["[PAD]"] + slot_labels + ["[PAD]"])
             intent_id = self.intent_label_dict[item["intent"]]

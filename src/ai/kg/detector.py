@@ -4,8 +4,8 @@ import numpy as np
 
 from transformers import BertTokenizer, BatchEncoding
 
-from models import JointBert
-from labeldict import LabelDict
+from .models import JointBert
+from .labeldict import LabelDict
 
 
 class JointIntentSlotDetector:
@@ -27,7 +27,12 @@ class JointIntentSlotDetector:
 
     @classmethod
     def from_pretrained(
-        cls, model_path, tokenizer_path, intent_label_path, slot_label_path, **kwargs
+        cls,
+        model_path: str,
+        tokenizer_path: str,
+        intent_label_path: str,
+        slot_label_path: str,
+        **kwargs
     ):
         intent_dict = LabelDict.load_dict(intent_label_path)
         slot_dict = LabelDict.load_dict(slot_label_path)
@@ -38,43 +43,42 @@ class JointIntentSlotDetector:
             model_path, slot_label_num=len(slot_dict), intent_label_num=len(intent_dict)
         )
 
-        return cls(model, tokenizer, intent_dict, slot_dict, **kwargs)
+        return cls(cast(JointBert, model), tokenizer, intent_dict, slot_dict, **kwargs)
 
     def _extract_slots_from_labels_for_one_seq(
         self, input_ids: list[int], slot_labels: list[str], mask: list[int] | None = None
     ):
         results: dict[str, list[str]] = {}
-        unfinished_slots: dict[str,str] = {}  # dict of {slot_name: slot_value} pairs
+        unfinished_slots: dict[str, str] = {}  # dict of {slot_name: slot_value} pairs
         if mask is None:
             mask = [1] * len(input_ids)
 
-        def add_new_slot_value(results: dict[str, list[str]], slot_name: str, slot_value: str):
-            if slot_name == "" or slot_value == "":
-                return results
+        def add_new_slot_value(slot_name: str, slot_value: str):
+            if not slot_name or not slot_value:
+                return
             if slot_name in results:
                 results[slot_name].append(slot_value)
             else:
                 results[slot_name] = [slot_value]
-            return results
 
         for i, slot_label in enumerate(slot_labels):
             if mask[i] == 0:
                 continue
-
+            # Here we assemble the slot entity name
             if slot_label.startswith("B_"):
                 slot_name = slot_label[2:]
                 if slot_name in unfinished_slots:
-                    results = add_new_slot_value(results, slot_name, unfinished_slots[slot_name])
+                    add_new_slot_value(slot_name, unfinished_slots[slot_name])
                 unfinished_slots[slot_name] = self.tokenizer.decode(input_ids[i])
 
             elif slot_label.startswith("I_"):
                 slot_name = slot_label[2:]
-                if slot_name in unfinished_slots and len(unfinished_slots[slot_name]) > 0:
+                if slot_name in unfinished_slots and unfinished_slots[slot_name]:
                     unfinished_slots[slot_name] += self.tokenizer.decode(input_ids[i])
 
         for slot_name, slot_value in unfinished_slots.items():
-            if len(slot_value) > 0:
-                results = add_new_slot_value(results, slot_name, slot_value)
+            if slot_value:
+                add_new_slot_value(slot_name, slot_value)
 
         return results
 
@@ -89,9 +93,6 @@ class JointIntentSlotDetector:
         slot_labels : [batch, seq_len]
         mask : [batch, seq_len]
         """
-        if isinstance(input_ids[0], int):
-            return self._extract_slots_from_labels_for_one_seq(input_ids, slot_labels, mask)
-
         if mask is None:
             mask = [[1 for _ in id_seq] for id_seq in input_ids]
 
@@ -100,20 +101,20 @@ class JointIntentSlotDetector:
             for i in range(len(input_ids))
         ]
 
-    def _predict_slot_labels(self, slot_probs: np.ndarray) -> list[str]:
+    def _predict_slot_labels(self, slot_probs: np.ndarray) -> list[list[str]]:
         """
         slot_probs : probability of a batch of tokens into slot labels, [batch, seq_len, slot_label_num], numpy array
         """
-        slot_ids = np.argmax(slot_probs, axis=-1)
-        return self.slot_dict.decode(cast(list[int], slot_ids.tolist()))
+        slot_ids: np.ndarray = np.argmax(slot_probs, axis=-1)
+        return np.array(list(map(self.slot_dict.decode, slot_ids.flat))).reshape(slot_ids.shape).tolist()
 
     def _predict_intent_labels(self, intent_probs: np.ndarray) -> list[str]:
         """
         intent_labels : probability of a batch of intent ids into intent labels, [batch, intent_label_num], numpy array
         """
-        intent_ids = np.argmax(intent_probs, axis=-1)
-        return self.intent_dict.decode(cast(list[int], intent_ids.tolist()))
-
+        intent_ids: np.ndarray = np.argmax(intent_probs, axis=-1)
+        return np.array(list(map(self.intent_dict.decode, intent_ids.flat))).reshape(intent_ids.shape).tolist()
+    
     @overload
     def detect(self, text: str, str_lower_case: bool = True) -> dict[str, Any]:
         ...
@@ -138,13 +139,12 @@ class JointIntentSlotDetector:
         batch_size = len(text)
 
         inputs: BatchEncoding = self.tokenizer(text, padding=True)
-        # print(inputs)
 
         with torch.no_grad():
             outputs = self.model(input_ids=torch.tensor(inputs["input_ids"]).long().to(self.device))
 
-        intent_logits = outputs["intent_logits"]
-        slot_logits = outputs["slot_logits"]
+        intent_logits = outputs["intent_logits"]  # batch_size * intent_num
+        slot_logits = outputs["slot_logits"]  #  batch_size * len * slot_num
 
         intent_probs = torch.softmax(intent_logits, dim=-1).detach().cpu().numpy()
         slot_probs = torch.softmax(slot_logits, dim=-1).detach().cpu().numpy()
