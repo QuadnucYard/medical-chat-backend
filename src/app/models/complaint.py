@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 
 class ComplaintBase(SQLModel):
+    category: str
     content: str
     create_time: datetime = Field(default_factory=time_now)
     resolve_time: datetime | None = None  # None as unresolved
@@ -42,6 +43,7 @@ class ComplaintReadDetailed(ComplaintRead):
 
 
 class ComplaintCreate(SQLModel):
+    category: str
     content: str
 
 
