@@ -1,5 +1,7 @@
 from operator import itemgetter
 from typing import Any
+
+from more_itertools import first
 from .search import Search
 
 
@@ -64,41 +66,46 @@ class Answer:
             case "disease_acompany":
                 return self.format_answer(answers, "{0}的并发症有：{1}等")
             case "disease_cause":
-                return self.format_answer_rel(answers, "x.cause", "{0}可能的成因有以下几种：{1}")
+                return self.format_answer(answers, "{0}可能的成因有以下几种：{1}")
             case "disease_check":
                 return self.format_answer(answers, "患有{0}应该检查{1}等项目")
             case "disease_cureprob":
                 # TODO some have prefixes
-                return self.format_answer_rel(answers, "x.cured_prob", "{0}的治愈概率约为：{1}")
+                return self.format_answer(answers, "{0}的治愈概率约为：{1}")
             case "disease_cureway":
-                return self.format_answer_rel(answers, "x.cure_way", "{0}的治疗方式有：{1}", sep="、")
+                return self.format_answer(answers, "{0}的治疗方式有：{1}")
             case "disease_desc":
-                return self.format_answer_rel(answers, "x.desc", "{0}的简介：{1}")
+                return self.format_answer(answers, "{0}的简介：{1}")
             case "disease_do_food":
                 return self.format_answer(answers, "患有{0}建议食用{1}等食物")
             case "disease_drug":
                 return self.format_answer(answers, "治疗{0}应该吃：{1}等药物")
             case "disease_easyget":
-                return self.format_answer_rel(answers, "x.easy_get", "{0}的易发人群有：{1}")
+                return self.format_answer(answers, "{0}的易发人群有：{1}")
             case "disease_lasttime":
-                return self.format_answer_rel(answers, "x.cure_lasttime", "{0}治疗需要的时间大致为：{1}")
+                return self.format_answer(answers, "{0}治疗需要的时间大致为：{1}")
             case "disease_not_food":
                 return self.format_answer(answers, "患有{0}不宜食用{1}等食物")
             case "disease_prevent":
-                return self.format_answer_rel(answers, "x.prevent", "{0}的预防措施有：{1}")
+                return self.format_answer(answers, "{0}的预防措施有：{1}")
             case "disease_symptom":
                 return self.format_answer(answers, "{0}的大致症状如下：{1}")
             case "symptom_disease":
                 return self.format_answer(answers, "{0}症状会导致的疾病有：{1}")
         return "暂时没有相关信息"
 
-    def format_answer(self, answers: list[dict[str, Any]], fmt: str, sep: str = "、") -> str:
-        return fmt.format(answers[0]["x.name"], sep.join(map(itemgetter("y.name"), answers)))
-
-    def format_answer_rel(
-        self, answers: list[dict[str, Any]], key: str, fmt: str, sep: str = ""
-    ) -> str:
-        return fmt.format(answers[0]["x.name"], sep.join(answers[0][key]))
+    def format_answer(self, answers: list[dict[str, Any]], fmt: str, *, sep: str = "、") -> str:
+        ans_str = ""
+        if answers:
+            if "y.name" in answers[0]:
+                # 一堆{x.name, y.name}
+                ans_str = sep.join(map(itemgetter("y.name"), answers))
+            else:
+                # answers[0][key]是一个字符串或字符串列表？
+                key = first((k for k in answers[0].keys() if k != "x.name"))
+                val = answers[0][key]
+                ans_str = sep.join(val) if isinstance(val, list) else val
+        return fmt.format(answers[0]["x.name"], ans_str)
 
 
 if __name__ == "__main__":
