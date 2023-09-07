@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Form, HTTPException
+from logging import Logger
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import EmailStr
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -6,8 +7,11 @@ from fastapi_pagination import Page
 from app import crud, models
 from app.core.security import verify_password
 from app.routers import deps
+from app.utils.futils import save_file
 
 router = APIRouter()
+
+logger = Logger(__file__)
 
 
 @router.get("/", response_model=Page[models.UserRead])
@@ -91,6 +95,18 @@ async def update_user_me(
     )
     user = await crud.user.update(db, db_obj=current_user, obj_in=user_in)
     return user
+
+
+@router.post("/me/avatar", response_model=models.UserRead)
+async def upload_avatar(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    file: UploadFile = File(),
+    current_user: models.User = Depends(deps.get_current_active_user),
+):
+    url = await save_file(file)
+    current_user.avatar_url = url
+    return await crud.user.add(db, current_user)
 
 
 @router.get("/{user_id}", response_model=models.UserRead | None)
