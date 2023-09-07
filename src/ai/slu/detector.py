@@ -1,11 +1,11 @@
 from typing import Any, cast, overload
-import torch
+
 import numpy as np
+import torch
+from transformers import BatchEncoding, BertTokenizer
 
-from transformers import BertTokenizer, BatchEncoding
-
-from .models import JointBert
 from .labeldict import LabelDict
+from .models import JointBert
 
 
 class JointIntentSlotDetector:
@@ -106,15 +106,23 @@ class JointIntentSlotDetector:
         slot_probs : probability of a batch of tokens into slot labels, [batch, seq_len, slot_label_num], numpy array
         """
         slot_ids: np.ndarray = np.argmax(slot_probs, axis=-1)
-        return np.array(list(map(self.slot_dict.decode, slot_ids.flat))).reshape(slot_ids.shape).tolist()
+        return (
+            np.array(list(map(self.slot_dict.decode, slot_ids.flat)))
+            .reshape(slot_ids.shape)
+            .tolist()
+        )
 
     def _predict_intent_labels(self, intent_probs: np.ndarray) -> list[str]:
         """
         intent_labels : probability of a batch of intent ids into intent labels, [batch, intent_label_num], numpy array
         """
         intent_ids: np.ndarray = np.argmax(intent_probs, axis=-1)
-        return np.array(list(map(self.intent_dict.decode, intent_ids.flat))).reshape(intent_ids.shape).tolist()
-    
+        return (
+            np.array(list(map(self.intent_dict.decode, intent_ids.flat)))
+            .reshape(intent_ids.shape)
+            .tolist()
+        )
+
     @overload
     def detect(self, text: str, str_lower_case: bool = True) -> dict[str, Any]:
         ...

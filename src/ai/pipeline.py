@@ -1,5 +1,5 @@
-from ai.kg.detector import JointIntentSlotDetector
-from ..config import settings
+from ai.slu.detector import JointIntentSlotDetector
+from .config import settings
 
 if __name__ == "__main__":
     detector = JointIntentSlotDetector.from_pretrained(

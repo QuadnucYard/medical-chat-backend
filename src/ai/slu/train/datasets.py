@@ -4,7 +4,7 @@ from tqdm import tqdm
 from torch.utils.data import Dataset
 from transformers import BertTokenizer
 
-from labeldict import LabelDict
+from ..labeldict import LabelDict
 
 
 def get_slot_labels(text, slots, tokenizer):

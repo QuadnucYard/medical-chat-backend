@@ -1,4 +1,4 @@
-from typing import Any, TypeVar, overload
+from typing import Any
 
 
 class LabelDict:
