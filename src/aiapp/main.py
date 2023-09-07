@@ -12,6 +12,6 @@ def ping():
 
 
 @app.post("/api/qa", tags=["ai"])
-async def qa(question: str = Body()):
+async def qa(question: str | list[str] = Body()):
     ans = await service.qa(question)
     return {"answer": ans}

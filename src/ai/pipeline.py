@@ -1,3 +1,4 @@
+from typing import overload
 from .config import settings
 from .kgqa.answer import Answer
 from .slu.detector import DetectResult, JointIntentSlotDetector
@@ -23,13 +24,26 @@ class MedQAPipeline:
         question_type = q.intent
         return None if not question_type or not entity else (question_type, entity)
 
-    def __call__(self, question: str):
+    def pipeline(self, question: str):
         res = self.detector.detect(question)
         print(res)
         qe = self.identify_question_entity(res)
         if not qe:
             return "您的问题并不明确，请换个问法再说一遍，谢谢。"
         return self.answerer.create_answer(*qe)
+
+    @overload
+    def __call__(self, question: str) -> str:
+        ...
+
+    @overload
+    def __call__(self, question: list[str]) -> list[str]:
+        ...
+
+    def __call__(self, question: str | list[str]):
+        if isinstance(question, list):
+            return list(map(self.pipeline, question))
+        return self.pipeline(question)
 
 
 if __name__ == "__main__":
