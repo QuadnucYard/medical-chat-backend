@@ -34,7 +34,8 @@ async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, us
     if settings.ENABLE_KGQA:
         async with aiohttp.ClientSession() as session:
             async with session.post(settings.KGQA_API, data=question) as response:
-                ans_txt = await response.text()
+                obj = await response.json()
+                ans_txt = obj["answer"]
     else:
         fake = Faker("zh_CN")
         ans_txt: str = fake.text()
