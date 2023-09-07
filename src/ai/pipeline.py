@@ -1,5 +1,5 @@
 from .config import settings
-from .kg.answer import Answer
+from .kgqa.answer import Answer
 from .slu.detector import DetectResult, JointIntentSlotDetector
 
 

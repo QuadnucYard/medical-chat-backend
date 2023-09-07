@@ -1,6 +1,5 @@
 from pprint import pprint
-from pydantic import BaseSettings, FilePath
-import pydantic
+from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
