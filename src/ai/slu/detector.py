@@ -130,7 +130,7 @@ class JointIntentSlotDetector:
         ...
 
     @overload
-    def detect(self, text: list[str], str_lower_case: bool = True) -> DetectResult:
+    def detect(self, text: list[str], str_lower_case: bool = True) -> list[DetectResult]:
         ...
 
     def detect(self, text: str | list[str], str_lower_case: bool = True):
