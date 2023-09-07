@@ -97,14 +97,16 @@ async def update_user_me(
     return user
 
 
-@router.post("/me/avatar", response_model=str)
+@router.post("/me/avatar", response_model=models.UserRead)
 async def upload_avatar(
     *,
     db: AsyncSession = Depends(deps.get_db),
     file: UploadFile = File(),
-    # current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(deps.get_current_active_user),
 ):
-    return await save_file(file)
+    url = await save_file(file)
+    current_user.avatar_url = url
+    return await crud.user.add(db, current_user)
 
 
 @router.get("/{user_id}", response_model=models.UserRead | None)
