@@ -1,0 +1,7 @@
+more_itertools
+numpy
+py2neo
+pydantic
+torch
+tqdm
+transformers
