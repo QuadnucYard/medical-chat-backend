@@ -96,3 +96,14 @@ async def send_question(
     return await chat_service.qa(
         db, chat_id=chat_id, question=question, hint=hint, user=current_user
     )
+
+
+@router.post("/{chat_id}/note", response_model=models.MessageRead)
+async def post_note(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    chat_id: int,
+    data: models.NoteCreate,
+    current_user: models.User = Depends(deps.get_current_active_user),
+):
+    return await chat_service.create_note(db, chat_id=chat_id, note_in=data, user=current_user)
