@@ -8,6 +8,20 @@ from app.routers import deps
 
 router = APIRouter()
 
+@router.get("/stat", tags=["stat"])
+async def get_feedback_stats(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    # user: models.User = Depends(deps.get_current_active_superuser),
+):
+    return {
+        "total": await crud.feedback.count(db),
+        "by_date": await crud.feedback.count_by_update_date(db),
+        "like_by_date":  await crud.feedback.count_like_by_update_date(db),
+        "dislike_by_date":  await crud.feedback.count_dislike_by_update_date(db),
+        "comment_by_date":  await crud.feedback.count_comment_by_update_date(db),
+    }
+
 
 @router.get("/", response_model=Page[models.FeedbackReadWithMsgUser])
 async def get_feedbacks(

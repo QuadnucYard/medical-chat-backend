@@ -110,3 +110,18 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             .select()
         )
         return (await db.exec(stmt)).all()  # type: ignore
+    
+    async def count_if_by_date(self, db: AsyncSession, field: Any, *where_clause):
+        stmt = (
+            select(
+                [
+                    func.to_char(field, "YYYY-MM-DD").label("date"),
+                    func.count().label("count"),
+                ]
+            )
+            .select_from(self.model)
+            .where(*where_clause)
+            .group_by("date")
+            .select()
+        )
+        return (await db.exec(stmt)).all()  # type: ignore
