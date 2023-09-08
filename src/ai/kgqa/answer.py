@@ -3,6 +3,7 @@ from typing import Any
 
 from more_itertools import first
 from .search import Search
+from pprint import pprint
 
 
 class Answer:
@@ -61,7 +62,6 @@ class Answer:
         answers = self.search_answer(question_type, entity)
         if not answers:
             return "暂时没有相关信息"
-        # 查询疾病的原因
         match question_type:
             case "disease_acompany":
                 return self.format_answer(answers, "{0}的并发症有：{1}等")
@@ -105,12 +105,15 @@ class Answer:
                 key = first((k for k in answers[0].keys() if k != "x.name"))
                 val = answers[0][key]
                 ans_str = sep.join(val) if isinstance(val, list) else val
-        return fmt.format(answers[0]["x.name"], ans_str)
+            return fmt.format(answers[0]["x.name"], ans_str)
+
+    def create_answer_multi(self, question_type: str, entitys: list[str]) -> list[str]:
+        return [self.create_answer(question_type, entity) for entity in entitys]
 
 
 if __name__ == "__main__":
     a = Answer()
-    print(a.create_answer("disease_cureprob", "感冒"))
-    print(a.create_answer("disease_prevent", "急腹症"))
-    print(a.create_answer("disease_do_food", "感冒"))
-    print(a.create_answer("disease_drug", "感冒"))
+    # print(a.create_answer("disease_cureprob", "感冒"))
+    # print(a.create_answer("disease_prevent", "急腹症"))
+    # print(a.create_answer("disease_do_food", "感冒"))
+    print(a.create_answer_multi("disease_cureprob", ["感冒", "急腹症", "中风"]))

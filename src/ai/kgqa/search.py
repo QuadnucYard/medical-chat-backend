@@ -29,7 +29,7 @@ class Search:
 
 if __name__ == "__main__":
     s = Search()
-    pprint(s.entity_relation("急腹症", "has_symptom"))
+    # pprint(s.entity_relation("急腹症", "has_symptom"))
     pprint(s.entity("急腹症", "cure_way"))
-    pprint(s.entity("感冒", "cure_way"))
-    pprint(s.entity("感冒", "prevent"))
+    pprint(s.entity("大叶性肺炎", "cure_way"))
+    # pprint(s.entity("感冒", "prevent"))
