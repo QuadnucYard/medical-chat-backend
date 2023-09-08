@@ -14,8 +14,19 @@ async def get_recommends(
     *,
     db: AsyncSession = Depends(deps.get_db),
 ):
-    """Get all recommendations."""
+    """Get all active recommendations."""
     return await recommend_service.get_active_recommends(db)
+
+
+@router.get("/all", response_model=Page[models.RecommendationReadWithOperator])
+async def get_all_recommends(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    q: deps.PageParams = Depends(),
+    current_user: models.User = Depends(deps.get_current_active_superuser),
+):
+    """Get all recommendations."""
+    return await recommend_service.get_all_recommends(db, page=q)
 
 
 @router.post("/", response_model=models.RecommendationRead)
