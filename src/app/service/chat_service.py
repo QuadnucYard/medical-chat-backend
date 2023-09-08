@@ -7,28 +7,42 @@ from app import crud
 from app.db.utils import from_orm_async
 from app.models import Chat, Feedback, FeedbackRead, MessageCreate, MessageType, User
 from app.models.chat import ChatReadWithMessages
-from app.models.message import MessageReadWithFeedback
+from app.models.message import MessageReadWithFeedback, NoteCreate
 from app.utils.sqlutils import time_now
 from app.core.config import settings
 
+
 async def access_chat(
-    db: AsyncSession, chat_id: int, user: User, *, allow_admin: bool = True
+    db: AsyncSession,
+    chat_id: int,
+    user: User,
+    *,
+    allow_admin: bool = True,
+    update_time: bool = False
 ) -> Chat:
     chat = await crud.chat.get(db, chat_id)
     if not crud.chat.is_valid(chat):  # Non-existent or deleted
         raise HTTPException(404, "The chat is not found!")
     if not (chat.user_id == user.id or allow_admin and crud.user.is_superuser(user)):
         raise HTTPException(403, "You can't access this chat!")
+    if update_time:
+        await update_chat_time(db, chat)
     return chat
 
 
-async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, user: User):
-    chat = await access_chat(db, chat_id=chat_id, user=user, allow_admin=False)
+async def update_chat_time(db: AsyncSession, chat: Chat) -> Chat:
     chat.update_time = time_now()
-    await crud.chat.add(db, chat)  # Update time
+    return await crud.chat.add(db, chat)
+
+
+async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, user: User):
+    chat = await access_chat(db, chat_id=chat_id, user=user, allow_admin=False, update_time=True)
 
     await crud.message.create(
-        db, MessageCreate(chat_id=chat_id, type=MessageType.Question, content=question)
+        db,
+        MessageCreate(
+            chat_id=chat_id, type=MessageType.Question, content=question, remark=hint or ""
+        ),
     )
 
     if settings.ENABLE_KGQA:
@@ -42,7 +56,7 @@ async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, us
 
     return await crud.message.create(
         db,
-        MessageCreate(chat_id=chat_id, type=MessageType.Answer, content=ans_txt),
+        MessageCreate(chat_id=chat_id, type=MessageType.Answer, content=ans_txt, remark=""),
     )
 
 
@@ -71,3 +85,14 @@ async def update_title(db: AsyncSession, chat_id: int, user: User, title: str):
     chat.title = title
     chat.update_time = time_now()
     return await crud.chat.add(db, chat)
+
+
+async def create_note(db: AsyncSession, chat_id: int, note_in: NoteCreate, user: User):
+    await access_chat(db, chat_id=chat_id, user=user)
+
+    return await crud.message.create(
+        db,
+        MessageCreate(
+            chat_id=chat_id, type=MessageType.Note, content=note_in.content, remark=note_in.remark
+        ),
+    )
