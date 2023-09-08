@@ -1,6 +1,7 @@
+aiohttp
 asyncpg
 bcrypt
-faker
+Faker
 fastapi
 fastapi_pagination
 passlib
