@@ -2,6 +2,7 @@ from operator import itemgetter
 from typing import Any
 
 from more_itertools import first
+
 from .search import Search
 
 
