@@ -11,6 +11,21 @@ from app.service import chat_service
 router = APIRouter()
 
 
+@router.get("/stat", tags=["stat"])
+async def get_chat_stats(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    # user: models.User = Depends(deps.get_current_active_superuser),
+):
+    return {
+        "chat_by_date": await crud.chat.count_by_date(db),
+        "message_by_date": await crud.message.count_by_date(db),
+        "question_by_date": await crud.message.count_q_by_date(db),
+        "answer_by_date": await crud.message.count_a_by_date(db),
+        "note_by_date": await crud.message.count_n_by_date(db),
+    }
+
+
 @router.get("/", response_model=Page[models.ChatRead])
 async def get_all_chats(
     *,
