@@ -10,6 +10,22 @@ from app.utils.sqlutils import time_now
 router = APIRouter()
 
 
+@router.get("/stat", tags=["stat"])
+async def get_complaint_stats(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    # current_user: models.User = Depends(deps.get_current_active_superuser),
+):
+    """(Admin) Get complaint stats."""
+
+    return {
+        "total": await crud.complaint.count(db),
+        "resolved": await crud.complaint.count_if(db, models.Complaint.resolve_time != None),
+        "creation_by_date": await crud.complaint.count_by_create_date(db),
+        "resolution_by_date": await crud.complaint.count_by_resolve_date(db),
+    }
+
+
 @router.get("/", response_model=Page[models.ComplaintReadDetailed])
 async def get_complaints(
     *,

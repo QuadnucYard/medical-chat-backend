@@ -5,7 +5,7 @@ from fastapi_pagination import Page
 from fastapi_pagination.types import AsyncItemsTransformer
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from pydantic import BaseModel
-from sqlmodel import SQLModel, select, desc
+from sqlmodel import SQLModel, select, desc, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.routers.deps import PageParams
@@ -88,3 +88,25 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj = await db.get(self.model, id)
         assert obj
         return await self.delete(db, obj)
+
+    async def count(self, db: AsyncSession) -> int:
+        stmt = select([func.count()]).select_from(self.model)
+        return (await db.exec(stmt)).one()  # type: ignore
+
+    async def count_if(self, db: AsyncSession, *where_clause) -> int:
+        stmt = select([func.count()]).select_from(self.model).where(*where_clause)
+        return (await db.exec(stmt)).one()  # type: ignore
+
+    async def count_by_date(self, db: AsyncSession, field: Any):
+        stmt = (
+            select(
+                [
+                    func.to_char(field, "YYYY-MM-DD").label("date"),
+                    func.count().label("count"),
+                ]
+            )
+            .select_from(self.model)
+            .group_by("date")
+            .select()
+        )
+        return (await db.exec(stmt)).all()  # type: ignore
