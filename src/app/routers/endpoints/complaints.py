@@ -29,7 +29,8 @@ async def create_complaint(
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
     """Create complaint."""
-    return await crud.complaint.add(db, models.Complaint(content=data.content, user=current_user))
+    complaint = models.Complaint(content=data.content, category=data.category, user=current_user)
+    return await crud.complaint.add(db, complaint)
 
 
 @router.post("/{id}", response_model=models.ComplaintRead)
@@ -43,7 +44,7 @@ async def resolve_complaint(
     complaint = await crud.complaint.get(db, id)
     if not complaint:
         raise HTTPException(404, "The complaint is not found!")
-    
+
     complaint.admin = current_user
     complaint.resolve_time = time_now()
 
