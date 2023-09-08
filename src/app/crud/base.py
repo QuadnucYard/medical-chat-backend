@@ -1,6 +1,7 @@
 from typing import Any, Generic, Sequence, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
+from fastapi_pagination import Page
 from fastapi_pagination.types import AsyncItemsTransformer
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from pydantic import BaseModel
@@ -39,7 +40,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         *,
         page: PageParams,
         transformer: AsyncItemsTransformer | None = None
-    ):
+    ) -> Page:
         stmt = select(self.model)
         if page.sort_by:
             key = getattr(self.model, page.sort_by)
