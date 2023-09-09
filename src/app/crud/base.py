@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from typing import Any, Generic, Sequence, Type, TypeVar, TypedDict
 
 from fastapi.encoders import jsonable_encoder
@@ -5,7 +6,8 @@ from fastapi_pagination import Page
 from fastapi_pagination.types import AsyncItemsTransformer
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from pydantic import BaseModel
-from sqlmodel import SQLModel, select, desc, func
+from sqlalchemy import DATE
+from sqlmodel import SQLModel, select, desc, func, cast
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.routers.deps import PageParams

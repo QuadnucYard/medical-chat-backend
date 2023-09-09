@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi_pagination import Page
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -7,6 +8,7 @@ from app import crud, models
 from app.db.utils import from_orm_async
 from app.routers import deps
 from app.service import chat_service
+from app.utils.sqlutils import is_today, is_yesterday
 
 router = APIRouter()
 
@@ -20,6 +22,14 @@ async def get_chat_stats(
     return {
         "total_chats": await crud.chat.count(db),
         "total_messages": await crud.message.count(db),
+        "total_chats_today": await crud.chat.count_if(db, is_today(models.Chat.create_time)),
+        "total_messages_today": await crud.message.count_if(db, is_today(models.Message.send_time)),
+        "total_chats_yesterday": await crud.chat.count_if(
+            db, is_yesterday(models.Chat.create_time)
+        ),
+        "total_messages_yesterday": await crud.message.count_if(
+            db, is_yesterday(models.Message.send_time)
+        ),
         "by_date": await chat_service.get_temporal_stats(db),
     }
 

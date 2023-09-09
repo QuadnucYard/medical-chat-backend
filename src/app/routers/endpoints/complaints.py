@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app import crud, models
 from app.routers import deps
 from app.service import complaint_service
-from app.utils.sqlutils import time_now
+from app.utils.sqlutils import is_today, time_now
 
 router = APIRouter()
 
@@ -21,7 +21,11 @@ async def get_complaint_stats(
 
     return {
         "total": await crud.complaint.count(db),
+        "total_today": await crud.complaint.count_if(db, is_today(models.Complaint.create_time)),
         "resolved": await crud.complaint.count_if(db, models.Complaint.resolve_time != None),
+        "resolved_today": await crud.complaint.count_if(
+            db, models.Complaint.resolve_time != None, is_today(models.Complaint.resolve_time)
+        ),
         "by_date": await complaint_service.get_temporal_stats(db),
     }
 

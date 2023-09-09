@@ -10,16 +10,14 @@ from app.service import feedback_service
 
 router = APIRouter()
 
+
 @router.get("/stat", tags=["stat"])
 async def get_feedback_stats(
     *,
     db: AsyncSession = Depends(deps.get_db),
     # user: models.User = Depends(deps.get_current_active_superuser),
 ):
-    return {
-        "total": await crud.feedback.count(db),
-        "by_date": await feedback_service.get_temporal_stats(db),
-    }
+    return await feedback_service.get_stats(db)
 
 
 @router.get("/", response_model=Page[models.FeedbackReadWithMsgUser])

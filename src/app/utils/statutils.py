@@ -23,4 +23,4 @@ async def counter_helper(
         .fillna(0)
     )
     res.insert(0, "date", res.index)
-    return res.to_dict("records")
+    return res.dropna().to_dict("records")
