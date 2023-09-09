@@ -41,16 +41,16 @@ class Answer:
                 return self.searcher.entity_relation(entity, "has_symptom")
 
             case "disease_acompany":  # 查询疾病的并发症
-                return self.searcher.entity_relation(entity, "acompany_with")
+                return self.searcher.entity_relation(entity, "accompany_with")
 
             case "disease_not_food":  # 查询疾病的忌口
                 return self.searcher.entity_relation(entity, "no_eat")
 
             case "disease_do_food":  # 查询疾病建议吃的东西
-                return self.searcher.entity_relations(entity, ["do_eat", "recommand_eat"])
+                return self.searcher.entity_relations(entity, ["do_eat", "recommend_eat"])
 
             case "disease_drug":  # 查询疾病常用药品
-                return self.searcher.entity_relations(entity, ["common_drug", "recommand_drug"])
+                return self.searcher.entity_relations(entity, ["common_drug", "recommend_drug"])
 
             case "disease_check":  # 查询疾病应该进行的检查
                 return self.searcher.entity_relation(entity, "need_check")
@@ -63,7 +63,7 @@ class Answer:
         if not answers:
             return "暂时没有相关信息"
         match question_type:
-            case "disease_acompany":
+            case "disease_accompany":
                 return self.format_answer(answers, "{0}的并发症有：{1}等")
             case "disease_cause":
                 return self.format_answer(answers, "{0}可能的成因有以下几种：{1}")

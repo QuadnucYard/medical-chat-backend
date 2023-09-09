@@ -14,6 +14,7 @@ class DetectResult:
     text: str
     intent: str
     slots: dict[str, list[str]]
+    slot_labels: list[list[str]]
 
 
 class JointIntentSlotDetector:
@@ -163,11 +164,16 @@ class JointIntentSlotDetector:
         intent_labels = self._predict_intent_labels(intent_probs)
 
         slot_values = self._extract_slots_from_labels(
-            inputs["input_ids"], slot_labels, inputs["attention_mask"] # type: ignore
+            inputs["input_ids"], slot_labels, inputs["attention_mask"]  # type: ignore
         )
 
         outputs = [
-            DetectResult(text=text[i], intent=intent_labels[i], slots=slot_values[i])
+            DetectResult(
+                text=text[i],
+                intent=intent_labels[i],
+                slots=slot_values[i],
+                slot_labels=slot_labels[i],
+            )
             for i in range(batch_size)
         ]
 
