@@ -1,16 +1,16 @@
 import aiohttp
 from faker import Faker
 from fastapi import HTTPException
-import pandas as pd
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud
+from app.core.config import settings
 from app.db.utils import from_orm_async
 from app.models import Chat, Feedback, FeedbackRead, MessageCreate, MessageType, User
 from app.models.chat import ChatReadWithMessages
 from app.models.message import MessageReadWithFeedback, NoteCreate
 from app.utils.sqlutils import time_now
-from app.core.config import settings
+from app.utils.statutils import counter_helper
 
 
 async def access_chat(
@@ -99,22 +99,12 @@ async def create_note(db: AsyncSession, chat_id: int, note_in: NoteCreate, user:
     )
 
 
-async def get_stats(db: AsyncSession):
-    a = await crud.chat.count_by_date(db)
-    b = await crud.message.count_by_date(db)
-    c = await crud.message.count_q_by_date(db)
-    d = await crud.message.count_a_by_date(db)
-    e = await crud.message.count_n_by_date(db)
-    res = pd.concat(
-        [
-            pd.DataFrame(a).set_index("date").rename(columns={"count": "total_chats"}),
-            pd.DataFrame(b).set_index("date").rename(columns={"count": "total_messages"}),
-            pd.DataFrame(c).set_index("date").rename(columns={"count": "questions"}),
-            pd.DataFrame(d).set_index("date").rename(columns={"count": "answers"}),
-            pd.DataFrame(e).set_index("date").rename(columns={"count": "notes"}),
-        ],
-        axis=1,
-        join="outer",
-    ).sort_index().fillna(0)
-    res.insert(0, "date", res.index)
-    return res.to_dict("records")
+async def get_temporal_stats(db: AsyncSession):
+    return await counter_helper(
+        db,
+        (crud.chat.count_by_date, "total_chats"),
+        (crud.message.count_by_date, "total_messages"),
+        (crud.message.count_q_by_date, "questions"),
+        (crud.message.count_a_by_date, "answers"),
+        (crud.message.count_n_by_date, "notes"),
+    )

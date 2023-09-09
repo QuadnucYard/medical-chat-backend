@@ -18,7 +18,7 @@ async def get_feedback_stats(
 ):
     return {
         "total": await crud.feedback.count(db),
-        "by_date": await feedback_service.get_stats(db),
+        "by_date": await feedback_service.get_temporal_stats(db),
     }
 
 

@@ -20,7 +20,7 @@ async def get_chat_stats(
     return {
         "total_chats": await crud.chat.count(db),
         "total_messages": await crud.message.count(db),
-        "by_date": await chat_service.get_stats(db),
+        "by_date": await chat_service.get_temporal_stats(db),
     }
 
 

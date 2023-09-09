@@ -1,4 +1,4 @@
-from typing import Any, Generic, Sequence, Type, TypeVar
+from typing import Any, Generic, Sequence, Type, TypeVar, TypedDict
 
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination import Page
@@ -13,6 +13,11 @@ from app.routers.deps import PageParams
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+
+
+class DateCount(TypedDict):
+    date: str
+    count: int
 
 
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
@@ -47,7 +52,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             key = desc(key) if page.desc else key
             stmt = stmt.order_by(key)
         return await paginate(db, stmt, transformer=transformer)
-    
+
     async def get_page_if(
         self,
         db: AsyncSession,
@@ -111,7 +116,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         stmt = select([func.count()]).select_from(self.model).where(*where_clause)
         return (await db.exec(stmt)).one()  # type: ignore
 
-    async def count_by_date(self, db: AsyncSession, field: Any):
+    async def count_by_date(self, db: AsyncSession, field: Any) -> list[DateCount]:
         stmt = (
             select(
                 [
@@ -124,8 +129,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             .select()
         )
         return (await db.exec(stmt)).all()  # type: ignore
-    
-    async def count_if_by_date(self, db: AsyncSession, field: Any, *where_clause):
+
+    async def count_if_by_date(
+        self, db: AsyncSession, field: Any, *where_clause
+    ) -> list[DateCount]:
         stmt = (
             select(
                 [
