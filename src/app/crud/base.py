@@ -47,6 +47,20 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             key = desc(key) if page.desc else key
             stmt = stmt.order_by(key)
         return await paginate(db, stmt, transformer=transformer)
+    
+    async def get_page_if(
+        self,
+        db: AsyncSession,
+        *where_clause,
+        page: PageParams,
+        transformer: AsyncItemsTransformer | None = None
+    ) -> Page:
+        stmt = select(self.model).where(*where_clause)
+        if page.sort_by:
+            key = getattr(self.model, page.sort_by)
+            key = desc(key) if page.desc else key
+            stmt = stmt.order_by(key)
+        return await paginate(db, stmt, transformer=transformer)
 
     async def add(self, db: AsyncSession, db_obj: ModelType):
         db.add(db_obj)

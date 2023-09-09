@@ -31,10 +31,16 @@ async def get_complaints(
     *,
     db: AsyncSession = Depends(deps.get_db),
     q: deps.PageParams = Depends(),
+    resolved: bool | None = None,
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """(Admin) Get all feedbacks."""
-    return await crud.complaint.get_page(db, page=q)
+    if resolved is None:
+        return await crud.complaint.get_page(db, page=q)
+    if resolved == True:
+        return await crud.complaint.get_page_resolved(db, page=q)
+    else:
+        return await crud.complaint.get_page_unresolved(db, page=q)
 
 
 @router.post("/", response_model=models.ComplaintRead)
@@ -54,6 +60,7 @@ async def resolve_complaint(
     *,
     db: AsyncSession = Depends(deps.get_db),
     id: int,
+    data: models.ComplaintResolve,
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """Resolve a complaint."""
@@ -62,6 +69,7 @@ async def resolve_complaint(
         raise HTTPException(404, "The complaint is not found!")
 
     complaint.admin = current_user
+    complaint.reply = data.reply
     complaint.resolve_time = time_now()
 
     return await crud.complaint.add(db, complaint)
