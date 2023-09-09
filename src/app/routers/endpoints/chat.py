@@ -18,11 +18,9 @@ async def get_chat_stats(
     # user: models.User = Depends(deps.get_current_active_superuser),
 ):
     return {
-        "chat_by_date": await crud.chat.count_by_date(db),
-        "message_by_date": await crud.message.count_by_date(db),
-        "question_by_date": await crud.message.count_q_by_date(db),
-        "answer_by_date": await crud.message.count_a_by_date(db),
-        "note_by_date": await crud.message.count_n_by_date(db),
+        "total_chats": await crud.chat.count(db),
+        "total_messages": await crud.message.count(db),
+        "by_date": await chat_service.get_stats(db),
     }
 
 

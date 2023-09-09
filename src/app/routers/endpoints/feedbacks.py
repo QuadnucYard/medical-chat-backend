@@ -1,10 +1,12 @@
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_pagination import Page
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud, models
 from app.routers import deps
+from app.service import feedback_service
 
 router = APIRouter()
 
@@ -16,10 +18,7 @@ async def get_feedback_stats(
 ):
     return {
         "total": await crud.feedback.count(db),
-        "by_date": await crud.feedback.count_by_update_date(db),
-        "like_by_date":  await crud.feedback.count_like_by_update_date(db),
-        "dislike_by_date":  await crud.feedback.count_dislike_by_update_date(db),
-        "comment_by_date":  await crud.feedback.count_comment_by_update_date(db),
+        "by_date": await feedback_service.get_stats(db),
     }
 
 

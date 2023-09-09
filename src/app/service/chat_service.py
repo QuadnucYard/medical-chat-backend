@@ -1,6 +1,7 @@
 import aiohttp
 from faker import Faker
 from fastapi import HTTPException
+import pandas as pd
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud
@@ -96,3 +97,24 @@ async def create_note(db: AsyncSession, chat_id: int, note_in: NoteCreate, user:
             chat_id=chat_id, type=MessageType.Note, content=note_in.content, remark=note_in.remark
         ),
     )
+
+
+async def get_stats(db: AsyncSession):
+    a = await crud.chat.count_by_date(db)
+    b = await crud.message.count_by_date(db)
+    c = await crud.message.count_q_by_date(db)
+    d = await crud.message.count_a_by_date(db)
+    e = await crud.message.count_n_by_date(db)
+    res = pd.concat(
+        [
+            pd.DataFrame(a).set_index("date").rename(columns={"count": "total_chats"}),
+            pd.DataFrame(b).set_index("date").rename(columns={"count": "total_messages"}),
+            pd.DataFrame(c).set_index("date").rename(columns={"count": "questions"}),
+            pd.DataFrame(d).set_index("date").rename(columns={"count": "answers"}),
+            pd.DataFrame(e).set_index("date").rename(columns={"count": "notes"}),
+        ],
+        axis=1,
+        join="outer",
+    ).sort_index().fillna(0)
+    res.insert(0, "date", res.index)
+    return res.to_dict("records")
