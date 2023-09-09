@@ -39,7 +39,7 @@ async def update_chat_time(db: AsyncSession, chat: Chat) -> Chat:
 async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, user: User):
     chat = await access_chat(db, chat_id=chat_id, user=user, allow_admin=False, update_time=True)
 
-    await crud.message.create(
+    question_msg = await crud.message.create(
         db,
         MessageCreate(
             chat_id=chat_id, type=MessageType.Question, content=question, remark=hint or ""
@@ -55,10 +55,11 @@ async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, us
         fake = Faker("zh_CN")
         ans_txt: str = fake.text()
 
-    return await crud.message.create(
+    answer_msg = await crud.message.create(
         db,
         MessageCreate(chat_id=chat_id, type=MessageType.Answer, content=ans_txt, remark=""),
     )
+    return [question_msg, answer_msg]
 
 
 async def get_chat_with_feedbacks(db: AsyncSession, chat: Chat, user: User):

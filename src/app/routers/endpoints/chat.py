@@ -107,7 +107,7 @@ async def update_title(
     return await from_orm_async(db, models.ChatRead, chat)
 
 
-@router.post("/{chat_id}", response_model=models.MessageRead)
+@router.post("/{chat_id}")
 async def send_question(
     *,
     db: AsyncSession = Depends(deps.get_db),
