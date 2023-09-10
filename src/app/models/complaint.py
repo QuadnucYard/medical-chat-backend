@@ -1,16 +1,19 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
+
+from app.utils.sqlutils import time_now
 
 if TYPE_CHECKING:
     from .user import User
 
 
 class ComplaintBase(SQLModel):
+    category: str
     content: str
-    create_time: datetime
-    resolve_time: datetime | None  # None as unresolved
+    create_time: datetime = Field(default_factory=time_now)
+    resolve_time: datetime | None = None  # None as unresolved
 
 
 class Complaint(ComplaintBase, table=True):
@@ -31,11 +34,22 @@ class Complaint(ComplaintBase, table=True):
 class ComplaintRead(ComplaintBase):
     id: int
     user_id: int
-    admin_id: int
+    admin_id: int | None
 
 
-class ComplaintCreate(ComplaintBase):
-    create_time: datetime = Field(default_factory=datetime.now)
+class ComplaintReadDetailed(ComplaintRead):
+    user: "UserReadPartial"
+    admin: Optional["UserReadPartial"]
 
 
-__all__ = ["Complaint", "ComplaintCreate", "ComplaintRead"]
+class ComplaintCreate(SQLModel):
+    category: str
+    content: str
+
+
+__all__ = ["Complaint", "ComplaintRead", "ComplaintReadDetailed", "ComplaintCreate"]
+
+
+from .user import UserReadPartial
+
+ComplaintReadDetailed.update_forward_refs()

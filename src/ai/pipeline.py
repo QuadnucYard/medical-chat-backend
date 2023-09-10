@@ -1,10 +1,30 @@
+from __future__ import annotations
+
+import asyncio
+from typing import TYPE_CHECKING, overload
+
 from .config import settings
+from .logging import logger
+
+logger.info("Start pipeline")
+
 from .kgqa.answer import Answer
-from .slu.detector import DetectResult, JointIntentSlotDetector
+
+if TYPE_CHECKING:
+    from .slu.detector import DetectResult
 
 
 class MedQAPipeline:
     def __init__(self) -> None:
+        logger.info("Init MedQAPipeline")
+        logger.info("Loading model async.")
+        self.load_model_task = asyncio.ensure_future(self._load_model())
+        self.answerer = Answer()
+        logger.info("OK.")
+
+    async def _load_model(self):
+        from .slu.detector import JointIntentSlotDetector
+
         self.detector = JointIntentSlotDetector.from_pretrained(
             model_path=settings.MODEL_PATH,
             tokenizer_path=settings.TOKENIZER_PATH,
@@ -13,6 +33,7 @@ class MedQAPipeline:
         )
         self.answerer = Answer()
         self.slot_label: list[list[str]]
+        logger.info("Model loading done")
 
     def identify_question_entity(self, q: DetectResult) -> tuple[str, str] | None:
         entity: str | None = None
@@ -24,9 +45,11 @@ class MedQAPipeline:
         question_type = q.intent
         return None if not question_type or not entity else (question_type, entity)
 
-    def __call__(self, question: str):
+    async def pipeline(self, question: str):
+        # asyncio.get_event_loop().run_until_complete(self.load_model_task)
+        await self.load_model_task
         res = self.detector.detect(question)
-        print(res)
+        logger.info(res)
         qe = self.identify_question_entity(res[:-1])
         self.slot_label = res[-1]
         if not qe:
@@ -49,9 +72,26 @@ class MedQAPipeline:
             )
         return position
 
+    @overload
+    async def __call__(self, question: str) -> str:
+        ...
 
-if __name__ == "__main__":
+    @overload
+    async def __call__(self, question: list[str]) -> list[str]:
+        ...
+
+    async def __call__(self, question: str | list[str]):
+        if isinstance(question, list):
+            return await asyncio.gather(*list(map(self.pipeline, question)))
+        return await self.pipeline(question)
+
+
+async def main():
     pipeline = MedQAPipeline()
     while True:
         text = input("input: ")
-        print(pipeline(text))
+        print(await pipeline(text))
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

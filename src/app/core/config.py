@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: str = "root"
     FIRST_SUPERUSER_PASSWORD: str = "root"
 
+    ENABLE_KGQA: bool = True
+    KGQA_API: str = "http://127.0.0.1:8010/api/qa"
+
     class Config:
         case_sensitive = True
 

@@ -13,12 +13,14 @@ if TYPE_CHECKING:
 class MessageType(Enum):
     Question = 0
     Answer = 1
+    Note = 2
 
 
 class MessageBase(SQLModel):
     chat_id: int | None = Field(default=None, foreign_key="chat.id")
     type: MessageType
     content: str
+    remark: str
 
 
 class Message(MessageBase, table=True):
@@ -42,7 +44,19 @@ class MessageCreate(MessageBase):
     chat_id: int
 
 
-__all__ = ["MessageType", "Message", "MessageRead", "MessageReadWithFeedback", "MessageCreate"]
+class NoteCreate(SQLModel):
+    content: str
+    remark: str
+
+
+__all__ = [
+    "MessageType",
+    "Message",
+    "MessageRead",
+    "MessageReadWithFeedback",
+    "MessageCreate",
+    "NoteCreate",
+]
 
 from .feedback import FeedbackRead
 
