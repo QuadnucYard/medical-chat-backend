@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, overload
 
+from more_itertools import first, first_true
+
 from .config import settings
 from .logging import logger
 
@@ -31,17 +33,10 @@ class MedQAPipeline:
             intent_label_path=settings.INTENT_LABEL_PATH,
             slot_label_path=settings.SLOT_LABEL_PATH,
         )
-        self.answerer = Answer()
-        self.slot_label: list[list[str]]
         logger.info("Model loading done")
 
     def identify_question_entity(self, q: DetectResult) -> tuple[str, str] | None:
-        entity: str | None = None
-        question_type: str | None = None
-        if q.slots.__contains__("disease"):
-            entity = q.slots["disease"][0]
-        elif q.slots.__contains__("symptom"):
-            entity = q.slots["symptom"][0]
+        entity = first((x.text for x in q.slots if x.slot in ("disease", "symptom")), default=None)
         question_type = q.intent
         return None if not question_type or not entity else (question_type, entity)
 
@@ -50,27 +45,11 @@ class MedQAPipeline:
         await self.load_model_task
         res = self.detector.detect(question)
         logger.info(res)
-        qe = self.identify_question_entity(res[:-1])
-        self.slot_label = res[-1]
+        qe = self.identify_question_entity(res)
+        self.slot_label = res.slot_labels
         if not qe:
             return "您的问题并不明确，请换个问法再说一遍，谢谢。"
         return self.answerer.create_answer(*qe)
-
-    def entity_position(self):
-        start = []
-        end = []
-        for label, i in enumerate(self.slot_label[0]):
-            if label == "B_disease" or label == "B_symptom" or label == "B_secsymptom":
-                start.append(i)
-            elif label == "I_disease" or label == "I_symptom" or label == "I_secsymptom":
-                if self.slot_label[0][i + 1] not in ["I_disease", "I_symptom", "I_secsymptom"]:
-                    end.append(i)
-        position = []
-        for i in range(len(start)):
-            position.append(
-                {"slot": self.slot_label[0][start[i][2:]], "start": start[i], "end": end[i]}
-            )
-        return position
 
     @overload
     async def __call__(self, question: str) -> str:
