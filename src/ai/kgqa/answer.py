@@ -13,6 +13,11 @@ from .search import Search
 class AnswerResult:
     items: list[str]
     text: str
+    marked_text: str
+
+
+def mark_answer(text: str):
+    return text.replace("\n", "<br>")
 
 
 class Answer:
@@ -34,7 +39,7 @@ class Answer:
             "disease_symptom": ["{0}的大致症状如下：{1}"],
             "symptom_disease": ["{0}症状会导致的疾病有：{1}"],
         }
-        self.answer_fallback = ["暂时没有相关信息"]
+        self.answer_fallback = ["暂时没有{0}相关信息"]
         self.answer_none = ["您的问题并不明确，请换个问法再说一遍，谢谢。"]
 
     # 根据问题类型调用Search类查询neo4j数据库，并将直接查询结果返回
@@ -81,26 +86,23 @@ class Answer:
             val = answers[0][key]
             return val if isinstance(val, list) else [val]
 
-    # def get_answer
-
     # 调用serach_answer函数，获得查询结果，依据结果生成对应的自然语言回答的字符串
     def create_answer(self, question_type: str, entity: str) -> AnswerResult:
         results = self.search_answer(question_type, entity)
         extracted = self.extract_search_results(results)
-        return AnswerResult(
-            items=extracted,
-            text=random.choice(self.answer_formats[question_type]).format(
-                entity, "、".join(extracted)
-            )
+        txt = (
+            random.choice(self.answer_formats[question_type]).format(entity, "、".join(extracted))
             if extracted
-            else random.choice(self.answer_fallback),
+            else random.choice(self.answer_fallback).format(entity)
         )
+        return AnswerResult(items=extracted, text=txt, marked_text=mark_answer(txt))
 
     def create_answer_multi(self, question_type: str, entitys: list[str]) -> list[AnswerResult]:
         return [self.create_answer(question_type, entity) for entity in entitys]
 
     def get_answer_none(self):
         return random.choice(self.answer_none)
+
 
 if __name__ == "__main__":
     a = Answer()

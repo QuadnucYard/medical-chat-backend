@@ -19,8 +19,18 @@ if TYPE_CHECKING:
 @dataclass
 class PipelineResult:
     detection: DetectResult
-    answer: list[AnswerResult]
+    marked_input: str
+    answers: list[AnswerResult]
     fallback_answer: str | None = None
+
+
+def mark_question(det: DetectResult) -> str:
+    marked = det.text
+    for s in reversed(det.slots):
+        p = det.token_pos[s.pos[0]]
+        q = p + len(s.text)
+        marked = f"{marked[:p]}<a>{marked[p:q]}</a>{marked[q:]}"
+    return marked
 
 
 class MedQAPipeline:
@@ -42,18 +52,18 @@ class MedQAPipeline:
         )
         logger.info("Model loading done")
 
-    def create_answer(self, res: DetectResult):
-        if not res.slots:
-            return "您的问题并不明确，请换个问法再说一遍，谢谢。"
-        return [self.answerer.create_answer(res.intent, r.text) for r in res.slots]
-
     async def pipeline(self, question: str) -> PipelineResult:
         await self.load_model_task
         res = self.detector.detect(question)
         logger.info(res)
         answers = [self.answerer.create_answer(res.intent, r.text) for r in res.slots]
         logger.info(answers)  # 如果为空，考虑加一个
-        return PipelineResult(res, answers, None if answers else self.answerer.get_answer_none())
+        return PipelineResult(
+            detection=res,
+            marked_input=mark_question(res),
+            answers=answers,
+            fallback_answer=None if answers else self.answerer.get_answer_none(),
+        )
 
     @overload
     async def __call__(self, question: str) -> PipelineResult:
