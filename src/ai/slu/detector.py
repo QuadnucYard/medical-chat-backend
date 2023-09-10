@@ -1,6 +1,5 @@
-from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, cast, overload
+from typing import cast, overload
 
 import numpy as np
 import torch
@@ -16,9 +15,12 @@ class FilledSlot:
     text: str
     pos: tuple[int, int]
 
+
 @dataclass
 class DetectResult:
     text: str
+    tokens: list[str]
+    token_pos: list[int]
     intent: str
     slots: list[FilledSlot]
     slot_labels: list[str]
@@ -64,7 +66,7 @@ class JointIntentSlotDetector:
     def _extract_slots_from_labels_for_one_seq(
         self, input_ids: list[int], slot_labels: list[str], mask: list[int] | None = None
     ):
-        results = list[FilledSlot]() # Example: [{'slot': 'disease', text: '感冒', pos: (5, 6)}]
+        results = list[FilledSlot]()  # Example: [{'slot': 'disease', text: '感冒', pos: (5, 6)}]
 
         for i, slot_label in enumerate(slot_labels):
             if mask and mask[i] == 0:
@@ -92,7 +94,9 @@ class JointIntentSlotDetector:
         mask : [batch, seq_len]
         """
         return [
-            self._extract_slots_from_labels_for_one_seq(input_ids[i], slot_labels[i],  mask[i] if mask else None)
+            self._extract_slots_from_labels_for_one_seq(
+                input_ids[i], slot_labels[i], mask[i] if mask else None
+            )
             for i in range(len(input_ids))
         ]
 
@@ -111,6 +115,19 @@ class JointIntentSlotDetector:
         intent_ids: np.ndarray = np.argmax(intent_probs, axis=-1)
         decoder = np.vectorize(self.intent_dict.decode)
         return decoder(intent_ids).tolist()
+
+    def _match_tokens(self, text: str, input_ids: list[int]):
+        input_tokens = [
+            self.tokenizer.decode(x).replace(" ", "").removeprefix("##") for x in input_ids
+        ]
+        i = 0
+        res = list[int]()
+        for token in input_tokens:
+            j = text.find(token, i)
+            res.append(j)
+            if j != -1:
+                i = j + len(token)
+        return res
 
     @overload
     def detect(self, text: str, str_lower_case: bool = True) -> DetectResult:
@@ -156,6 +173,8 @@ class JointIntentSlotDetector:
         outputs = [
             DetectResult(
                 text=text[i],
+                tokens=[self.tokenizer.decode(x) for x in inputs["input_ids"][i]],  # type: ignore
+                token_pos=self._match_tokens(text[i], inputs["input_ids"][i]),  # type: ignore
                 intent=intent_labels[i],
                 slots=slot_values[i],
                 slot_labels=slot_labels[i],

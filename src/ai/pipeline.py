@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, overload
 
 from more_itertools import first, first_true
@@ -14,6 +15,11 @@ from .kgqa.answer import Answer
 
 if TYPE_CHECKING:
     from .slu.detector import DetectResult
+
+
+@dataclass
+class PipelineResult:
+    detection: DetectResult
 
 
 class MedQAPipeline:
@@ -35,21 +41,19 @@ class MedQAPipeline:
         )
         logger.info("Model loading done")
 
-    def identify_question_entity(self, q: DetectResult) -> tuple[str, str] | None:
-        entity = first((x.text for x in q.slots if x.slot in ("disease", "symptom")), default=None)
-        question_type = q.intent
-        return None if not question_type or not entity else (question_type, entity)
+    def create_answer(self, res: DetectResult):
+        if not res.slots:
+            return "您的问题并不明确，请换个问法再说一遍，谢谢。"
+        return [self.answerer.create_answer(res.intent, r.text) for r in res.slots]
 
     async def pipeline(self, question: str):
         # asyncio.get_event_loop().run_until_complete(self.load_model_task)
         await self.load_model_task
         res = self.detector.detect(question)
         logger.info(res)
-        qe = self.identify_question_entity(res)
-        self.slot_label = res.slot_labels
-        if not qe:
-            return "您的问题并不明确，请换个问法再说一遍，谢谢。"
-        return self.answerer.create_answer(*qe)
+        answers = [self.answerer.create_answer(res.intent, r.text) for r in res.slots]
+        logger.info(answers)
+        return answers
 
     @overload
     async def __call__(self, question: str) -> str:
