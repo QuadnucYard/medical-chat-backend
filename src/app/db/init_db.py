@@ -1,9 +1,11 @@
+import os
 import random
 from typing import Any
 from faker import Faker
 from sqlmodel import SQLModel
 from app.db.utils import no_echo
 
+from aiapp.models import *
 from app.models import *
 from app import crud
 from app.core.config import settings
@@ -68,6 +70,7 @@ class Init:
                     chat=random.choice(self.chats),
                     type=random.choice(list(MessageType)),
                     content=self.fake.text(),
+                    remark="",
                 ),
             )
             for _ in range(num)
@@ -102,6 +105,9 @@ async def init_db():
     async with engine.begin() as conn:
         # await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
+
+    if os.getenv("CREATE_ONLY"):
+        return
 
     async with SessionLocal() as db:
         user = await crud.user.get_by_username(db, username="root")
