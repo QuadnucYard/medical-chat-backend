@@ -4,12 +4,13 @@ from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud
+from app.core.config import settings
 from app.db.utils import from_orm_async
 from app.models import Chat, Feedback, FeedbackRead, MessageCreate, MessageType, User
 from app.models.chat import ChatReadWithMessages
 from app.models.message import MessageReadWithFeedback, NoteCreate
 from app.utils.sqlutils import time_now
-from app.core.config import settings
+from app.utils.statutils import counter_helper
 
 
 async def access_chat(
@@ -38,7 +39,7 @@ async def update_chat_time(db: AsyncSession, chat: Chat) -> Chat:
 async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, user: User):
     chat = await access_chat(db, chat_id=chat_id, user=user, allow_admin=False, update_time=True)
 
-    await crud.message.create(
+    question_msg = await crud.message.create(
         db,
         MessageCreate(
             chat_id=chat_id, type=MessageType.Question, content=question, remark=hint or ""
@@ -54,10 +55,11 @@ async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, us
         fake = Faker("zh_CN")
         ans_txt: str = fake.text()
 
-    return await crud.message.create(
+    answer_msg = await crud.message.create(
         db,
         MessageCreate(chat_id=chat_id, type=MessageType.Answer, content=ans_txt, remark=""),
     )
+    return [question_msg, answer_msg]
 
 
 async def get_chat_with_feedbacks(db: AsyncSession, chat: Chat, user: User):
@@ -95,4 +97,15 @@ async def create_note(db: AsyncSession, chat_id: int, note_in: NoteCreate, user:
         MessageCreate(
             chat_id=chat_id, type=MessageType.Note, content=note_in.content, remark=note_in.remark
         ),
+    )
+
+
+async def get_temporal_stats(db: AsyncSession):
+    return await counter_helper(
+        db,
+        (crud.chat.count_by_date, "total_chats"),
+        (crud.message.count_by_date, "total_messages"),
+        (crud.message.count_q_by_date, "questions"),
+        (crud.message.count_a_by_date, "answers"),
+        (crud.message.count_n_by_date, "notes"),
     )
