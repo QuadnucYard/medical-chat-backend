@@ -18,5 +18,4 @@ async def qa(
     db: AsyncSession = Depends(deps.get_db),
     question: str | list[str] = Body(),
 ):
-    ans = await service.qa(db, question)
-    return {"answer": ans}
+    return await service.qa(db, question)
