@@ -62,7 +62,7 @@ async def get_share(
 async def get_links(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    q: deps.PageParams = Depends(),
+    q: models.PageParams = Depends(),
     user: models.User = Depends(deps.get_current_active_superuser),
 ):
     "(Admin) Get all shared links"
