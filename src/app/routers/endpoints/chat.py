@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi_pagination import Page
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -7,8 +8,30 @@ from app import crud, models
 from app.db.utils import from_orm_async
 from app.routers import deps
 from app.service import chat_service
+from app.utils.sqlutils import is_today, is_yesterday
 
 router = APIRouter()
+
+
+@router.get("/stat", tags=["stat"])
+async def get_chat_stats(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    # user: models.User = Depends(deps.get_current_active_superuser),
+):
+    return {
+        "total_chats": await crud.chat.count(db),
+        "total_messages": await crud.message.count(db),
+        "total_chats_today": await crud.chat.count_if(db, is_today(models.Chat.create_time)),
+        "total_messages_today": await crud.message.count_if(db, is_today(models.Message.send_time)),
+        "total_chats_yesterday": await crud.chat.count_if(
+            db, is_yesterday(models.Chat.create_time)
+        ),
+        "total_messages_yesterday": await crud.message.count_if(
+            db, is_yesterday(models.Message.send_time)
+        ),
+        "by_date": await chat_service.get_temporal_stats(db),
+    }
 
 
 @router.get("/", response_model=Page[models.ChatRead])
@@ -84,7 +107,7 @@ async def update_title(
     return await from_orm_async(db, models.ChatRead, chat)
 
 
-@router.post("/{chat_id}", response_model=models.MessageRead)
+@router.post("/{chat_id}")
 async def send_question(
     *,
     db: AsyncSession = Depends(deps.get_db),

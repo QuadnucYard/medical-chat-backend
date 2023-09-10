@@ -16,5 +16,8 @@ class CRUDChat(CRUDBase[Chat, ChatCreate, SQLModel]):
     def is_valid(self, chat: Chat | None) -> TypeGuard[Chat]:
         return chat is not None and not chat.delete_time
 
+    async def count_by_date(self, db):
+        return await super().count_by_date(db, Chat.create_time)
+
 
 chat = CRUDChat(Chat)

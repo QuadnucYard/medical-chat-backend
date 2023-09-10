@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 class ComplaintBase(SQLModel):
     category: str
     content: str
+    reply: str | None = None
     create_time: datetime = Field(default_factory=time_now)
     resolve_time: datetime | None = None  # None as unresolved
 
@@ -47,7 +48,17 @@ class ComplaintCreate(SQLModel):
     content: str
 
 
-__all__ = ["Complaint", "ComplaintRead", "ComplaintReadDetailed", "ComplaintCreate"]
+class ComplaintResolve(SQLModel):
+    reply: str
+
+
+__all__ = [
+    "Complaint",
+    "ComplaintRead",
+    "ComplaintReadDetailed",
+    "ComplaintCreate",
+    "ComplaintResolve",
+]
 
 
 from .user import UserReadPartial

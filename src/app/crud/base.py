@@ -1,10 +1,13 @@
-from typing import Any, Generic, Sequence, Type, TypeVar
+from datetime import date, timedelta
+from typing import Any, Generic, Sequence, Type, TypeVar, TypedDict
 
 from fastapi.encoders import jsonable_encoder
+from fastapi_pagination import Page
 from fastapi_pagination.types import AsyncItemsTransformer
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from pydantic import BaseModel
-from sqlmodel import SQLModel, select, desc
+from sqlalchemy import DATE
+from sqlmodel import SQLModel, select, desc, func, cast
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.routers.deps import PageParams
@@ -12,6 +15,11 @@ from app.routers.deps import PageParams
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+
+
+class DateCount(TypedDict):
+    date: str
+    count: int
 
 
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
@@ -39,8 +47,22 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         *,
         page: PageParams,
         transformer: AsyncItemsTransformer | None = None
-    ):
+    ) -> Page:
         stmt = select(self.model)
+        if page.sort_by:
+            key = getattr(self.model, page.sort_by)
+            key = desc(key) if page.desc else key
+            stmt = stmt.order_by(key)
+        return await paginate(db, stmt, transformer=transformer)
+
+    async def get_page_if(
+        self,
+        db: AsyncSession,
+        *where_clause,
+        page: PageParams,
+        transformer: AsyncItemsTransformer | None = None
+    ) -> Page:
+        stmt = select(self.model).where(*where_clause)
         if page.sort_by:
             key = getattr(self.model, page.sort_by)
             key = desc(key) if page.desc else key
@@ -87,3 +109,42 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj = await db.get(self.model, id)
         assert obj
         return await self.delete(db, obj)
+
+    async def count(self, db: AsyncSession) -> int:
+        stmt = select([func.count()]).select_from(self.model)
+        return (await db.exec(stmt)).one()  # type: ignore
+
+    async def count_if(self, db: AsyncSession, *where_clause) -> int:
+        stmt = select([func.count()]).select_from(self.model).where(*where_clause)
+        return (await db.exec(stmt)).one()  # type: ignore
+
+    async def count_by_date(self, db: AsyncSession, field: Any) -> list[DateCount]:
+        stmt = (
+            select(
+                [
+                    func.to_char(field, "YYYY-MM-DD").label("date"),
+                    func.count().label("count"),
+                ]
+            )
+            .select_from(self.model)
+            .group_by("date")
+            .select()
+        )
+        return (await db.exec(stmt)).all()  # type: ignore
+
+    async def count_if_by_date(
+        self, db: AsyncSession, field: Any, *where_clause
+    ) -> list[DateCount]:
+        stmt = (
+            select(
+                [
+                    func.to_char(field, "YYYY-MM-DD").label("date"),
+                    func.count().label("count"),
+                ]
+            )
+            .select_from(self.model)
+            .where(*where_clause)
+            .group_by("date")
+            .select()
+        )
+        return (await db.exec(stmt)).all()  # type: ignore
