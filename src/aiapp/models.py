@@ -15,4 +15,5 @@ class IntentCount(BaseCount, table=True):
 
 
 class EntityCount(BaseCount, table=True):
-    group: str = Field(primary_key=True)
+    # group: str = Field(primary_key=True)
+    ...

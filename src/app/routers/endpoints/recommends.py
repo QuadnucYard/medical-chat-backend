@@ -22,7 +22,7 @@ async def get_recommends(
 async def get_all_recommends(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    q: deps.PageParams = Depends(),
+    q: models.PageParams = Depends(),
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """Get all recommendations."""

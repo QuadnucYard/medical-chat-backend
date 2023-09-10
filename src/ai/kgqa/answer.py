@@ -11,6 +11,7 @@ from .search import Search
 
 @dataclass
 class AnswerResult:
+    entity: str
     items: list[str]
     text: str
     marked_text: str
@@ -102,7 +103,7 @@ class Answer:
             if extracted
             else random.choice(self.answer_fallback).format(entity)
         )
-        return AnswerResult(items=extracted, text=txt, marked_text=mark_answer(txt))
+        return AnswerResult(entity=entity, items=extracted, text=txt, marked_text=mark_answer(txt))
 
     def create_answer_multi(self, question_type: str, entitys: list[str]) -> list[AnswerResult]:
         return [self.create_answer(question_type, entity) for entity in entitys]

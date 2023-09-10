@@ -1,16 +1,18 @@
-from datetime import date, timedelta
-from typing import Any, Generic, Sequence, Type, TypeVar, TypedDict
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Generic, Sequence, Type, TypedDict, TypeVar
 
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination import Page
-from fastapi_pagination.types import AsyncItemsTransformer
 from fastapi_pagination.ext.async_sqlalchemy import paginate
+from fastapi_pagination.types import AsyncItemsTransformer
 from pydantic import BaseModel
 from sqlalchemy import DATE
-from sqlmodel import SQLModel, select, desc, func, cast
+from sqlmodel import SQLModel, cast, desc, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.routers.deps import PageParams
+if TYPE_CHECKING:
+    from app.models import PageParams
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -46,7 +48,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db: AsyncSession,
         *,
         page: PageParams,
-        transformer: AsyncItemsTransformer | None = None
+        transformer: AsyncItemsTransformer | None = None,
     ) -> Page:
         stmt = select(self.model)
         if page.sort_by:
@@ -60,7 +62,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db: AsyncSession,
         *where_clause,
         page: PageParams,
-        transformer: AsyncItemsTransformer | None = None
+        transformer: AsyncItemsTransformer | None = None,
     ) -> Page:
         stmt = select(self.model).where(*where_clause)
         if page.sort_by:

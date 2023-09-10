@@ -2,8 +2,7 @@ from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.crud.base import CRUDBase
-from app.models.complaint import Complaint, ComplaintCreate
-from app.routers.deps import PageParams
+from app.models import Complaint, ComplaintCreate, PageParams
 
 
 class CRUDComplaint(CRUDBase[Complaint, ComplaintCreate, SQLModel]):
