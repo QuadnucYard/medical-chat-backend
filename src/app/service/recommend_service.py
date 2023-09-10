@@ -3,9 +3,7 @@ from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud
-from app.models import User
-from app.models.recommendation import Recommendation, RecommendationCreate
-from app.routers.deps import PageParams
+from app.models import User, Recommendation, RecommendationCreate, PageParams
 
 
 async def get_active_recommends(db: AsyncSession):
