@@ -1,10 +1,34 @@
+from datetime import datetime
+
+from fastapi import HTTPException
 from sqlmodel import func
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud
-from app.models import Feedback
+from app.models.feedback import Feedback, FeedbackUpdate
+from app.models.user import User
 from app.utils.sqlutils import is_today, is_yesterday
 from app.utils.statutils import counter_helper
+
+
+async def update_feedback(
+    db: AsyncSession,
+    data: FeedbackUpdate,
+    user: User,
+):
+    """Update feedback of the user. Create feedback if necessary."""
+    if data.mark_like and data.mark_dislike:
+        data.mark_like = False  # Exclusive
+    fb = await crud.feedback.get(db, (data.msg_id, user.id))
+    if fb:
+        fb.update_time = datetime.now()
+        return await crud.feedback.update(db, db_obj=fb, obj_in=data)
+        # 暂时不做互斥了……
+    else:
+        msg = await crud.message.get(db, data.msg_id)
+        if not msg:
+            raise HTTPException(404, "The message is not found!")
+        return await crud.feedback.add(db, Feedback(user=user, **data.dict()))
 
 
 async def get_temporal_stats(db: AsyncSession):

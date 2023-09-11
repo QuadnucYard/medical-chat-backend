@@ -1,4 +1,3 @@
-from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_pagination import Page
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -6,7 +5,6 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app import crud, models
 from app.routers import deps
 from app.service import complaint_service
-from app.utils.sqlutils import is_today, time_now
 
 router = APIRouter()
 
@@ -18,16 +16,7 @@ async def get_complaint_stats(
     # current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """(Admin) Get complaint stats."""
-
-    return {
-        "total": await crud.complaint.count(db),
-        "total_today": await crud.complaint.count_if(db, is_today(models.Complaint.create_time)),
-        "resolved": await crud.complaint.count_if(db, models.Complaint.resolve_time != None),
-        "resolved_today": await crud.complaint.count_if(
-            db, models.Complaint.resolve_time != None, is_today(models.Complaint.resolve_time)
-        ),
-        "by_date": await complaint_service.get_temporal_stats(db),
-    }
+    return await complaint_service.get_stats(db)
 
 
 @router.get("/", response_model=Page[models.ComplaintReadDetailed])
@@ -38,13 +27,8 @@ async def get_complaints(
     resolved: bool | None = None,
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
-    """(Admin) Get all feedbacks."""
-    if resolved is None:
-        return await crud.complaint.get_page(db, page=q)
-    if resolved == True:
-        return await crud.complaint.get_page_resolved(db, page=q)
-    else:
-        return await crud.complaint.get_page_unresolved(db, page=q)
+    """(Admin) Get all complaints."""
+    return await complaint_service.get_all_complaints(db, q, resolved)
 
 
 @router.post("/", response_model=models.ComplaintRead)
@@ -55,8 +39,7 @@ async def create_complaint(
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
     """Create complaint."""
-    complaint = models.Complaint(content=data.content, category=data.category, user=current_user)
-    return await crud.complaint.add(db, complaint)
+    return await complaint_service.create_complaint(db, data, current_user)
 
 
 @router.post("/{id}", response_model=models.ComplaintRead)
@@ -72,8 +55,4 @@ async def resolve_complaint(
     if not complaint:
         raise HTTPException(404, "The complaint is not found!")
 
-    complaint.admin = current_user
-    complaint.reply = data.reply
-    complaint.resolve_time = time_now()
-
-    return await crud.complaint.add(db, complaint)
+    return await complaint_service.resolve_complaint(db, complaint, current_user, data.reply)

@@ -1,4 +1,6 @@
+from datetime import datetime
 import random
+
 import aiohttp
 from faker import Faker
 from fastapi import HTTPException
@@ -7,10 +9,17 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app import crud
 from app.core.config import settings
 from app.db.utils import from_orm_async
-from app.models import Chat, Feedback, FeedbackRead, MessageCreate, MessageType, User
-from app.models.chat import ChatReadWithMessages
-from app.models.message import MessageReadWithFeedback, NoteCreate
-from app.utils.sqlutils import time_now
+from app.models.chat import Chat, ChatReadWithMessages
+from app.models.feedback import Feedback, FeedbackRead
+from app.models.message import (
+    Message,
+    MessageCreate,
+    MessageReadWithFeedback,
+    MessageType,
+    NoteCreate,
+)
+from app.models.user import User
+from app.utils.sqlutils import is_today, is_yesterday, time_now
 from app.utils.statutils import counter_helper
 
 
@@ -22,6 +31,21 @@ async def access_chat(
     allow_admin: bool = True,
     update_time: bool = False
 ) -> Chat:
+    """Try accessing a chat.
+
+    Args:
+        db (AsyncSession): _description_
+        chat_id (int): _description_
+        user (User): The current operating user
+        allow_admin (bool, optional): Whether admin can unconditionally access. Defaults to True.
+        update_time (bool, optional): Whether to update the chat time. Defaults to False.
+
+    Raises:
+        HTTPException
+
+    Returns:
+        Chat: The accessed chat
+    """
     chat = await crud.chat.get(db, chat_id)
     if not crud.chat.is_valid(chat):  # Non-existent or deleted
         raise HTTPException(404, "The chat is not found!")
@@ -33,13 +57,19 @@ async def access_chat(
 
 
 async def update_chat_time(db: AsyncSession, chat: Chat) -> Chat:
+    """Update the `update_time` of a chat to now and save it."""
     chat.update_time = time_now()
     return await crud.chat.add(db, chat)
 
 
-async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, user: User):
-    chat = await access_chat(db, chat_id=chat_id, user=user, allow_admin=False, update_time=True)
+async def delete_chat(db: AsyncSession, chat: Chat) -> Chat:
+    """Delete a chat from DB and set its `delete_time` to now."""
+    chat.delete_time = datetime.now()
+    return await crud.chat.add(db, chat)
 
+
+async def qa(db: AsyncSession, chat: Chat, question: str, hint: str | None):
+    """Perferm Q&A. It saves the question and answer messages to DB."""
     if settings.ENABLE_KGQA:
         async with aiohttp.ClientSession() as session:
             async with session.post(settings.KGQA_API, data=question) as response:
@@ -58,13 +88,13 @@ async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, us
     question_msg = await crud.message.create(
         db,
         MessageCreate(
-            chat_id=chat_id, type=MessageType.Question, content=que_text, remark=hint or ""
+            chat_id=chat.id, type=MessageType.Question, content=que_text, remark=hint or ""
         ),
     )
     answer_msgs = [
         await crud.message.create(
             db,
-            MessageCreate(chat_id=chat_id, type=MessageType.Answer, content=ans_txt, remark=""),
+            MessageCreate(chat_id=chat.id, type=MessageType.Answer, content=ans_txt, remark=""),
         )
         for ans_txt in ans_txts
     ]
@@ -72,6 +102,7 @@ async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, us
 
 
 async def get_chat_with_feedbacks(db: AsyncSession, chat: Chat, user: User):
+    """Get a chat with feedbacks loaded."""
     def feedback_orm(fb: Feedback | None):
         return FeedbackRead.from_orm(fb) if fb else None
 
@@ -91,20 +122,19 @@ async def get_chat_with_feedbacks(db: AsyncSession, chat: Chat, user: User):
     )
 
 
-async def update_title(db: AsyncSession, chat_id: int, user: User, title: str):
-    chat = await access_chat(db, chat_id=chat_id, user=user)
+async def update_title(db: AsyncSession, chat: Chat, title: str):
+    """Update the title of the chat and update its `update_time` to now."""
     chat.title = title
     chat.update_time = time_now()
     return await crud.chat.add(db, chat)
 
 
-async def create_note(db: AsyncSession, chat_id: int, note_in: NoteCreate, user: User):
-    await access_chat(db, chat_id=chat_id, user=user)
-
+async def create_note(db: AsyncSession, chat: Chat, note_in: NoteCreate):
+    """Create a note in the chat."""
     return await crud.message.create(
         db,
         MessageCreate(
-            chat_id=chat_id, type=MessageType.Note, content=note_in.content, remark=note_in.remark
+            chat_id=chat.id, type=MessageType.Note, content=note_in.content, remark=note_in.remark
         ),
     )
 
@@ -118,3 +148,17 @@ async def get_temporal_stats(db: AsyncSession):
         (crud.message.count_a_by_date, "answers"),
         (crud.message.count_n_by_date, "notes"),
     )
+
+
+async def get_stats(db: AsyncSession):
+    return {
+        "total_chats": await crud.chat.count(db),
+        "total_messages": await crud.message.count(db),
+        "total_chats_today": await crud.chat.count_if(db, is_today(Chat.create_time)),
+        "total_messages_today": await crud.message.count_if(db, is_today(Message.send_time)),
+        "total_chats_yesterday": await crud.chat.count_if(db, is_yesterday(Chat.create_time)),
+        "total_messages_yesterday": await crud.message.count_if(
+            db, is_yesterday(Message.send_time)
+        ),
+        "by_date": await get_temporal_stats(db),
+    }

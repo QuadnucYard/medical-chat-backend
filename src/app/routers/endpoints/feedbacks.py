@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi_pagination import Page
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -39,18 +37,5 @@ async def update_feedback(
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
     """Update feedback of the user. Create feedback if necessary."""
-    if data.mark_like and data.mark_dislike:
-        data.mark_like = False  # Exclusive
-    fb = await crud.feedback.get(db, (data.msg_id, current_user.id))
-    if fb:
-        fb.update_time = datetime.now()
-        return await crud.feedback.update(db, db_obj=fb, obj_in=data)
-        # 暂时不做互斥了……
-    else:
-        msg = await crud.message.get(db, data.msg_id)
-        if not msg:
-            raise HTTPException(404, "The message is not found!")
-        return await crud.feedback.add(db, models.Feedback(user=current_user, **data.dict()))
+    return await feedback_service.update_feedback(db,data,current_user)
 
-
-# TODO get feedbacks of certain messages

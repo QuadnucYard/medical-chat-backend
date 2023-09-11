@@ -15,9 +15,6 @@ class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, BaseModel]):
         return (await db.exec(stmt)).first() is not None  # type: ignore
 
     async def get_shared_times(self, db: AsyncSession, link_id: str):
-        # TODO cache shared times in sharedlink table
-        # stmt = select(SharedUser).where(SharedUser.link_id == link_id)
-        # return len((await db.exec(stmt)).all())  # type: ignore
         link = await self.get(db, link_id)
         return link.use_times if link else 0
 
