@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class UserBase(SQLModel):
     username: str
-    email: EmailStr | None = Field(default=None, index=True)
+    email: str | None = Field(default=None, index=True)
     phone: str | None = Field(default=None, index=True)
     name: str | None = None
     avatar_url: str = ""
@@ -57,7 +57,7 @@ class UserReadWithRole(UserRead):
 
 class UserUpdate(SQLModel):
     username: str | None = None
-    email: EmailStr | None = None
+    email: str | None = None
     phone: str | None = None
     name: str | None = None
     avatar_url: str | None = None
@@ -67,7 +67,7 @@ class UserUpdate(SQLModel):
 
 class UserCreate(SQLModel):
     username: str
-    email: EmailStr | None = None
+    email: str | None = None
     phone: str | None = None
     name: str | None = None
     password: str
@@ -78,7 +78,7 @@ class UserCreate(SQLModel):
 class UserRegister(SQLModel):
     username: str
     password: str
-    email: EmailStr = Field(default="", index=True)
+    email: str = Field(default="", index=True)
     phone: str = Field(default="", index=True)
     name: str = ""
 

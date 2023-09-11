@@ -67,15 +67,25 @@ async def login_access_token(
 
 
 @router.post("/auth", response_model=models.UserRead)
-def test_token(current_user: models.User = Depends(deps.get_current_user)):
+async def test_token(
+    db: AsyncSession = Depends(deps.get_db),
+    admin: bool | None = Body(None),
+    perm: str | None = Body(None),
+    current_user: models.User = Depends(deps.get_current_user),
+):
     """
     Test access token
     """
+    # Check permissions
+    if (admin and not crud.user.is_superuser(current_user)) or (
+        perm and (perm not in await crud.user.get_perms(db, current_user))
+    ):
+        raise HTTPException(status_code=400, detail="The user doesn't have enough privileges")
     return current_user
 
 
 @router.post("/auth/logout")
-def logout():
+async def logout():
     response = Response()
     response.delete_cookie("token")
     return response
