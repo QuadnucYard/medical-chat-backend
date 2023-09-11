@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from pprint import pprint
 from typing import TYPE_CHECKING, overload
 
+from ai.slu.nlp import SimpleNLP
+
 from .config import settings
 from .logging import logger
 
@@ -19,6 +21,7 @@ if TYPE_CHECKING:
 @dataclass
 class PipelineResult:
     detection: DetectResult
+    tags: list[str]
     marked_input: str
     answers: list[AnswerResult]
     fallback_answer: str | None = None
@@ -38,6 +41,7 @@ class MedQAPipeline:
         logger.info("Init MedQAPipeline")
         logger.info("Loading model async.")
         self.load_model_task = asyncio.ensure_future(self._load_model())
+        self.nlp = SimpleNLP()
         self.answerer = Answer()
         logger.info("OK.")
 
@@ -60,6 +64,7 @@ class MedQAPipeline:
         logger.info(answers)  # 如果为空，考虑加一个
         return PipelineResult(
             detection=res,
+            tags=self.nlp(question),
             marked_input=mark_question(res),
             answers=answers,
             fallback_answer=None if answers else self.answerer.get_answer_none(),

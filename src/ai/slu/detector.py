@@ -77,6 +77,8 @@ class JointIntentSlotDetector:
                 results.append(FilledSlot(slot_name, self.tokenizer.decode(input_ids[i]), (i, i)))
             elif slot_label.startswith("I_"):
                 slot_name = slot_label[2:]
+                if not results:
+                    results.append(FilledSlot(slot_name, "", (i, i)))
                 results[-1].text += self.tokenizer.decode(input_ids[i])
                 results[-1].pos = (results[-1].pos[0], i)
 
