@@ -34,7 +34,7 @@ async def get_complaint_stats(
 async def get_complaints(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    q: deps.PageParams = Depends(),
+    q: models.PageParams = Depends(),
     resolved: bool | None = None,
     current_user: models.User = Depends(deps.get_current_active_superuser),
 ):

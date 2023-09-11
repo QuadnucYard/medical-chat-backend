@@ -1,8 +1,22 @@
-from ai.pipeline import MedQAPipeline
-from asgiref.sync import sync_to_async
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from ai.pipeline import MedQAPipeline, PipelineResult
+from aiapp.models import IntentCount, EntityCount, WordCount
+from aiapp import crud
 
 pipeline = MedQAPipeline()
 
 
-async def qa(question: str | list[str]):
-    return await sync_to_async(pipeline)(question)
+async def update_stats(db: AsyncSession, pr: PipelineResult):
+    await crud.counter.inc(db, IntentCount, pr.detection.intent)
+    for a in pr.answers:
+        await crud.counter.inc(db, EntityCount, a.entity)
+    for t in pr.tags:
+        await crud.counter.inc(db, WordCount, t)
+
+
+async def qa(db: AsyncSession, question: str | list[str]):
+    res = await pipeline(question)
+    for r in res if isinstance(res, list) else [res]:
+        await update_stats(db, r)
+    return res

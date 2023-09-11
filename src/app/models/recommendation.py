@@ -24,12 +24,13 @@ class Recommendation(RecommendationBase, table=True):
     creator: "User" = Relationship(
         sa_relationship_kwargs=dict(primaryjoin="Recommendation.creator_id==User.id", lazy="joined")
     )
-    remover: "User" = Relationship(
+    remover: Optional["User"] = Relationship(
         sa_relationship_kwargs=dict(primaryjoin="Recommendation.remover_id==User.id", lazy="joined")
     )
 
 
 class RecommendationRead(RecommendationBase):
+    id: int
     add_time: datetime
 
 

@@ -1,3 +1,4 @@
+import random
 import aiohttp
 from faker import Faker
 from fastapi import HTTPException
@@ -39,27 +40,35 @@ async def update_chat_time(db: AsyncSession, chat: Chat) -> Chat:
 async def qa(db: AsyncSession, chat_id: int, question: str, hint: str | None, user: User):
     chat = await access_chat(db, chat_id=chat_id, user=user, allow_admin=False, update_time=True)
 
-    question_msg = await crud.message.create(
-        db,
-        MessageCreate(
-            chat_id=chat_id, type=MessageType.Question, content=question, remark=hint or ""
-        ),
-    )
-
     if settings.ENABLE_KGQA:
         async with aiohttp.ClientSession() as session:
             async with session.post(settings.KGQA_API, data=question) as response:
                 obj = await response.json()
-                ans_txt = obj["answer"]
+                que_text = obj["marked_input"]
+                ans_txts = (
+                    [a["marked_text"] for a in obj["answers"]]
+                    if obj["answers"]
+                    else [obj["fallback_answer"]]
+                )
     else:
         fake = Faker("zh_CN")
-        ans_txt: str = fake.text()
+        que_text = question
+        ans_txts: list[str] = [fake.text() for _ in range(random.randint(1, 3))]
 
-    answer_msg = await crud.message.create(
+    question_msg = await crud.message.create(
         db,
-        MessageCreate(chat_id=chat_id, type=MessageType.Answer, content=ans_txt, remark=""),
+        MessageCreate(
+            chat_id=chat_id, type=MessageType.Question, content=que_text, remark=hint or ""
+        ),
     )
-    return [question_msg, answer_msg]
+    answer_msgs = [
+        await crud.message.create(
+            db,
+            MessageCreate(chat_id=chat_id, type=MessageType.Answer, content=ans_txt, remark=""),
+        )
+        for ans_txt in ans_txts
+    ]
+    return [question_msg, *answer_msgs]
 
 
 async def get_chat_with_feedbacks(db: AsyncSession, chat: Chat, user: User):

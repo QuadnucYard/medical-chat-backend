@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, cast, overload
+from typing import cast, overload
 
 import numpy as np
 import torch
@@ -10,10 +10,20 @@ from .models import JointBert
 
 
 @dataclass
+class FilledSlot:
+    slot: str
+    text: str
+    pos: tuple[int, int]
+
+
+@dataclass
 class DetectResult:
     text: str
+    tokens: list[str]
+    token_pos: list[int]
     intent: str
-    slots: dict[str, list[str]]
+    slots: list[FilledSlot]
+    slot_labels: list[str]
 
 
 class JointIntentSlotDetector:
@@ -56,37 +66,21 @@ class JointIntentSlotDetector:
     def _extract_slots_from_labels_for_one_seq(
         self, input_ids: list[int], slot_labels: list[str], mask: list[int] | None = None
     ):
-        results: dict[str, list[str]] = {}
-        unfinished_slots: dict[str, str] = {}  # dict of {slot_name: slot_value} pairs
-        if mask is None:
-            mask = [1] * len(input_ids)
-
-        def add_new_slot_value(slot_name: str, slot_value: str):
-            if not slot_name or not slot_value:
-                return
-            if slot_name in results:
-                results[slot_name].append(slot_value)
-            else:
-                results[slot_name] = [slot_value]
+        results = list[FilledSlot]()  # Example: [{'slot': 'disease', text: '感冒', pos: (5, 6)}]
 
         for i, slot_label in enumerate(slot_labels):
-            if mask[i] == 0:
+            if mask and mask[i] == 0:
                 continue
             # Here we assemble the slot entity name
             if slot_label.startswith("B_"):
                 slot_name = slot_label[2:]
-                if slot_name in unfinished_slots:
-                    add_new_slot_value(slot_name, unfinished_slots[slot_name])
-                unfinished_slots[slot_name] = self.tokenizer.decode(input_ids[i])
-
+                results.append(FilledSlot(slot_name, self.tokenizer.decode(input_ids[i]), (i, i)))
             elif slot_label.startswith("I_"):
                 slot_name = slot_label[2:]
-                if slot_name in unfinished_slots and unfinished_slots[slot_name]:
-                    unfinished_slots[slot_name] += self.tokenizer.decode(input_ids[i])
-
-        for slot_name, slot_value in unfinished_slots.items():
-            if slot_value:
-                add_new_slot_value(slot_name, slot_value)
+                if not results:
+                    results.append(FilledSlot(slot_name, "", (i, i)))
+                results[-1].text += self.tokenizer.decode(input_ids[i])
+                results[-1].pos = (results[-1].pos[0], i)
 
         return results
 
@@ -101,11 +95,10 @@ class JointIntentSlotDetector:
         slot_labels : [batch, seq_len]
         mask : [batch, seq_len]
         """
-        if mask is None:
-            mask = [[1 for _ in id_seq] for id_seq in input_ids]
-
         return [
-            self._extract_slots_from_labels_for_one_seq(input_ids[i], slot_labels[i], mask[i])
+            self._extract_slots_from_labels_for_one_seq(
+                input_ids[i], slot_labels[i], mask[i] if mask else None
+            )
             for i in range(len(input_ids))
         ]
 
@@ -124,6 +117,19 @@ class JointIntentSlotDetector:
         intent_ids: np.ndarray = np.argmax(intent_probs, axis=-1)
         decoder = np.vectorize(self.intent_dict.decode)
         return decoder(intent_ids).tolist()
+
+    def _match_tokens(self, text: str, input_ids: list[int]):
+        input_tokens = [
+            self.tokenizer.decode(x).replace(" ", "").removeprefix("##") for x in input_ids
+        ]
+        i = 0
+        res = list[int]()
+        for token in input_tokens:
+            j = text.find(token, i)
+            res.append(j)
+            if j != -1:
+                i = j + len(token)
+        return res
 
     @overload
     def detect(self, text: str, str_lower_case: bool = True) -> DetectResult:
@@ -163,11 +169,18 @@ class JointIntentSlotDetector:
         intent_labels = self._predict_intent_labels(intent_probs)
 
         slot_values = self._extract_slots_from_labels(
-            inputs["input_ids"], slot_labels, inputs["attention_mask"] # type: ignore
+            inputs["input_ids"], slot_labels, inputs["attention_mask"]  # type: ignore
         )
 
         outputs = [
-            DetectResult(text=text[i], intent=intent_labels[i], slots=slot_values[i])
+            DetectResult(
+                text=text[i],
+                tokens=[self.tokenizer.decode(x) for x in inputs["input_ids"][i]],  # type: ignore
+                token_pos=self._match_tokens(text[i], inputs["input_ids"][i]),  # type: ignore
+                intent=intent_labels[i],
+                slots=slot_values[i],
+                slot_labels=slot_labels[i],
+            )
             for i in range(batch_size)
         ]
 
