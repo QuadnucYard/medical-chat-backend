@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from pydantic import BaseModel
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -32,9 +32,15 @@ class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, BaseModel]):
         await db.refresh(link)
         await self.consume_share(db, user=user, link=link)
         return link
-    
+
     def is_expired(self, link: SharedLink):
-        return link.expire_time < datetime.now(timezone.utc)
+        return link.expire_time < datetime.now()
+
+    async def get_share(self, db: AsyncSession, chat_id: int) -> SharedLink | None:
+        stmt = select(SharedLink).where(
+            SharedLink.chat_id == chat_id, SharedLink.expire_time < datetime.now()
+        )
+        return (await db.exec(stmt)).first()  # type: ignore
 
 
 share = CRUDShare(SharedLink)

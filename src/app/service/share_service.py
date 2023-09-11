@@ -1,7 +1,26 @@
+from datetime import datetime, timedelta
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud, models
+from app.models.chat import Chat
+from app.models.shared_link import SharedLink
+
+
+async def get_chat_link(db: AsyncSession, chat: Chat):
+    return await crud.share.get_share(db, chat.id)
+
+
+async def create_share(db: AsyncSession, data: models.SharedLinkCreate, chat: Chat):
+    return await crud.share.add(
+        db,
+        SharedLink(
+            chat=chat,
+            expire_time=datetime.now() + timedelta(days=data.expire_days),
+            max_uses=data.max_uses,
+            readonly=data.readonly,
+        ),
+    )
 
 
 async def get_share(

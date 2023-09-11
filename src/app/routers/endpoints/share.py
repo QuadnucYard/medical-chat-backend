@@ -4,7 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud, models
 from app.routers import deps
-from app.service import share_service
+from app.service import chat_service, share_service
 
 router = APIRouter()
 
@@ -14,12 +14,11 @@ async def create_share(
     *,
     db: AsyncSession = Depends(deps.get_db),
     data: models.SharedLinkCreate,
-    # current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(deps.get_current_active_user),
 ):
-    """Create a shared link with unique URL."""
-    # The creator must be the chat owner or admin
-    # Need chat!
-    return await crud.share.create(db, obj_in=data)
+    """Create a shared link with unique URL. The creator must be the chat owner or admin"""
+    chat = await chat_service.access_chat(db, data.chat_id, current_user)
+    return await share_service.create_share(db, data, chat)
 
 
 @router.delete("/{id}", response_model=models.SharedLinkRead)
@@ -27,9 +26,12 @@ async def delete_share(
     *,
     db: AsyncSession = Depends(deps.get_db),
     id: str,
-    # current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(deps.get_current_active_user),
 ):
     "Delete a existent shared link by link. Current user must be the chat owner or admin."
+    share = await crud.share.get_one(db, id)
+    assert share.chat_id
+    chat = await chat_service.access_chat(db, share.chat_id, current_user)
     return await crud.share.remove(db, id=id)
 
 
