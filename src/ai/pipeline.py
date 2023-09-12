@@ -57,17 +57,25 @@ class MedQAPipeline:
         logger.info("Model loading done")
 
     async def pipeline(self, question: str) -> PipelineResult:
+        """Put the question through the pipeline. Detect intent and slots, search for answers."""
         await self.load_model_task
         res = self.detector.detect(question)
         logger.info(res)
         answers = [self.answerer.create_answer(res.intent, r.text) for r in res.slots]
         logger.info(answers)  # 如果为空，考虑加一个
+
+        fallback_answer = None
+        if res.intent == "[UNK]":
+            fallback_answer = self.answerer.get_answer_unk()
+        elif not answers:
+            fallback_answer = self.answerer.get_answer_none()
+
         return PipelineResult(
             detection=res,
             tags=self.nlp(question),
             marked_input=mark_question(res),
             answers=answers,
-            fallback_answer=None if answers else self.answerer.get_answer_none(),
+            fallback_answer=fallback_answer,
         )
 
     @overload

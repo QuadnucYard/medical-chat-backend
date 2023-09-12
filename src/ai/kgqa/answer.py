@@ -1,7 +1,6 @@
 import random
 from dataclasses import dataclass
 from operator import itemgetter
-from pprint import pprint
 from typing import Any
 
 from more_itertools import first
@@ -49,9 +48,14 @@ class Answer:
         }
         self.answer_fallback = ["暂时没有{0}相关信息"]
         self.answer_none = ["您的问题并不明确，请换个问法再说一遍，谢谢。"]
+        self.answer_unk = [
+            "您的问题好像超出了我的回答范围，请问一个合适的问题",
+            "这个问题似乎与医学无关，请重新考虑",
+            "我是医药问答机器人，无法回答与医疗无关的问题，请重新提问",
+        ]
 
-    # 根据问题类型调用Search类查询neo4j数据库，并将直接查询结果返回
     def search_answer(self, question_type: str, entity: str) -> list[dict[str, Any]]:
+        """根据问题类型调用Search类查询neo4j数据库，并将直接查询结果返回"""
         match question_type:
             case "disease_cause":  # 查询疾病的原因
                 return self.searcher.entity(entity, "cause")
@@ -94,8 +98,8 @@ class Answer:
             val = answers[0][key]
             return val if isinstance(val, list) else [val]
 
-    # 调用serach_answer函数，获得查询结果，依据结果生成对应的自然语言回答的字符串
     def create_answer(self, question_type: str, entity: str) -> AnswerResult:
+        """调用serach_answer函数，获得查询结果，依据结果生成对应的自然语言回答的字符串"""
         results = self.search_answer(question_type, entity)
         extracted = self.extract_search_results(results)
         txt = (
@@ -110,6 +114,9 @@ class Answer:
 
     def get_answer_none(self):
         return random.choice(self.answer_none)
+    
+    def get_answer_unk(self):
+        return random.choice(self.answer_unk)
 
 
 if __name__ == "__main__":
