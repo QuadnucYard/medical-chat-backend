@@ -27,7 +27,7 @@ from app.utils.statutils import counter_helper
 
 async def to_read(db: AsyncSession, chat: Chat) -> ChatRead:
     link = await share_service.get_chat_link(db, chat)
-    return await db.run_sync(lambda _: ChatRead.from_orm(chat, dict(link=link)))  
+    return await db.run_sync(lambda _: ChatRead.from_orm(chat, dict(link=link)))
 
 
 async def to_reads(db: AsyncSession, chats: Sequence[Chat]) -> list[ChatRead]:
@@ -72,6 +72,12 @@ async def access_chat(
     if update_time:
         await update_chat_time(db, chat)
     return chat
+
+
+async def get_shared_chats(db: AsyncSession, user: User):
+    return await db.run_sync(
+        lambda _: [l.link.chat for l in user.links if crud.chat.is_valid(l.link.chat)]
+    )
 
 
 async def update_chat_time(db: AsyncSession, chat: Chat) -> Chat:

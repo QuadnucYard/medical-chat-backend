@@ -39,8 +39,7 @@ async def get_my_chats(
 ):
     """Get chats of current user."""
     chats = await crud.chat.get_by_user(db, user=user)
-    chats2 = await db.run_sync(lambda _: [l.link.chat for l in user.links])
-    # 还需要获取用户分享得到的
+    chats2 = await chat_service.get_shared_chats(db, user)  # 还需要获取用户分享得到的
     return await chat_service.to_reads(db, chats + chats2)
 
 
