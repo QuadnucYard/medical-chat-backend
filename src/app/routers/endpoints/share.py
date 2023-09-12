@@ -47,6 +47,19 @@ async def get_share(
     return await share_service.get_share(db, id, user)
 
 
+@router.put("/{id}", response_model=models.SharedLinkRead)
+async def update_share(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    id: str,
+    data: models.SharedLinkUpdate,
+    user: models.User | None = Depends(deps.get_current_active_superuser),
+):
+    "Update a shared link."
+    share = await crud.share.get_one(db, id)
+    return await crud.share.update(db, db_obj=share, obj_in=data)
+
+
 @router.get("/", response_model=Page[models.SharedLinkRead])
 async def get_links(
     *,

@@ -1,13 +1,13 @@
 from datetime import datetime
-from pydantic import BaseModel
+
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.crud.base import CRUDBase
-from app.models import SharedLink, SharedLinkCreate, SharedUser, User
+from app.models import SharedLink, SharedLinkCreate, SharedLinkUpdate, SharedUser, User
 
 
-class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, BaseModel]):
+class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, SharedLinkUpdate]):
     async def is_user_shared(self, db: AsyncSession, user_id: int, link_id: str):
         stmt = select(SharedUser).where(
             SharedUser.user_id == user_id, SharedUser.link_id == link_id
@@ -38,7 +38,9 @@ class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, BaseModel]):
 
     async def get_share(self, db: AsyncSession, chat_id: int) -> SharedLink | None:
         stmt = select(SharedLink).where(
-            SharedLink.chat_id == chat_id, SharedLink.valid == True, SharedLink.expire_time >= datetime.now()
+            SharedLink.chat_id == chat_id,
+            SharedLink.valid == True,
+            SharedLink.expire_time >= datetime.now(),
         )
         return (await db.exec(stmt)).first()  # type: ignore
 

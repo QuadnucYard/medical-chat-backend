@@ -41,4 +41,10 @@ class SharedLinkCreate(SQLModel):
     readonly: bool
 
 
-__all__ = ["SharedLink", "SharedLinkCreate", "SharedLinkRead"]
+class SharedLinkUpdate(SQLModel):
+    max_uses: int
+    readonly: bool
+    valid: bool
+
+
+__all__ = ["SharedLink", "SharedLinkCreate", "SharedLinkRead", "SharedLinkUpdate"]

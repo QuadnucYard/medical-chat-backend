@@ -29,7 +29,7 @@ class CRUDMessage(CRUDBase[Message, MessageCreate, SQLModel]):
         )
 
     async def count_distinct_sender_today(self, db: AsyncSession):
-        stmt = select(func.count(distinct(Chat.user_id))).where(is_today(Chat.update_time))
+        stmt = select(func.count(distinct(Chat.user_id))).where(is_today(Chat.update_time))  # type: ignore
         return (await db.exec(stmt)).one()
 
 
