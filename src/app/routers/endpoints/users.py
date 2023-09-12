@@ -62,7 +62,7 @@ async def create_user(
     return user
 
 
-@router.get("/me", response_model=models.UserRead)
+@router.get("/me", response_model=models.UserReadWithRole)
 async def read_user_me(
     db: AsyncSession = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -70,7 +70,7 @@ async def read_user_me(
     """
     Get current user.
     """
-    return await db.run_sync(lambda _: models.UserRead.from_orm(current_user))
+    return await db.run_sync(lambda _: models.UserReadWithRole.from_orm(current_user))
 
 
 @router.put("/me", response_model=models.UserRead)

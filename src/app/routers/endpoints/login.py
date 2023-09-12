@@ -66,7 +66,7 @@ async def login_access_token(
     }
 
 
-@router.post("/auth", response_model=models.UserRead)
+@router.post("/auth", response_model=models.UserReadWithRole)
 async def test_token(
     db: AsyncSession = Depends(deps.get_db),
     admin: bool | None = Body(None),
@@ -81,7 +81,7 @@ async def test_token(
         perm and (perm not in await crud.user.get_perms(db, current_user))
     ):
         raise HTTPException(status_code=400, detail="The user doesn't have enough privileges")
-    return current_user
+    return await db.run_sync(lambda _: models.UserReadWithRole.from_orm(current_user))
 
 
 @router.post("/auth/logout")

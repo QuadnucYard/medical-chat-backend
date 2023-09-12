@@ -95,4 +95,4 @@ __all__ = [
 
 from .role_perm import RoleRead
 
-UserRead.update_forward_refs()
+UserReadWithRole.update_forward_refs()
