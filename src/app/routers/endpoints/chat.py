@@ -32,14 +32,16 @@ async def get_all_chats(
 
 
 @router.get("/me", response_model=list[models.ChatRead])
-async def get_chats(
+async def get_my_chats(
     *,
     db: AsyncSession = Depends(deps.get_db),
     user: models.User = Depends(deps.get_current_active_user),
 ):
     """Get chats of current user."""
     chats = await crud.chat.get_by_user(db, user=user)
-    return await chat_service.to_reads(db, chats)
+    chats2 = await db.run_sync(lambda _: [l.link.chat for l in user.links])
+    # 还需要获取用户分享得到的
+    return await chat_service.to_reads(db, chats + chats2)
 
 
 @router.post("/", response_model=models.ChatRead)
