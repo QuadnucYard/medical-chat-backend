@@ -32,7 +32,8 @@ async def delete_share(
     share = await crud.share.get_one(db, id)
     assert share.chat_id
     chat = await chat_service.access_chat(db, share.chat_id, current_user)
-    return await crud.share.remove(db, id=id)
+    share.valid = False
+    return await crud.share.add(db, share)
 
 
 @router.get("/{id}", response_model=models.SharedLinkRead)

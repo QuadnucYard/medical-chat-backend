@@ -38,7 +38,7 @@ class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, BaseModel]):
 
     async def get_share(self, db: AsyncSession, chat_id: int) -> SharedLink | None:
         stmt = select(SharedLink).where(
-            SharedLink.chat_id == chat_id, SharedLink.expire_time < datetime.now()
+            SharedLink.chat_id == chat_id, SharedLink.valid == True, SharedLink.expire_time >= datetime.now()
         )
         return (await db.exec(stmt)).first()  # type: ignore
 
