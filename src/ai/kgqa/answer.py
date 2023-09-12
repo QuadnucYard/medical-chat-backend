@@ -85,6 +85,7 @@ class Answer:
                 return self.searcher.entity_relations(entity, ["common_drug", "recommend_drug"])
             case "disease_check":  # 查询疾病应该进行的检查
                 return self.searcher.entity_relation(entity, "need_check")
+        print("Unknown", question_type)
         assert False
 
     def extract_search_results(self, answers: list[dict[str, Any]]) -> list[str]:

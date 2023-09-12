@@ -61,7 +61,11 @@ class MedQAPipeline:
         await self.load_model_task
         res = self.detector.detect(question)
         logger.info(res)
-        answers = [self.answerer.create_answer(res.intent, r.text) for r in res.slots]
+        answers = (
+            [self.answerer.create_answer(res.intent, r.text) for r in res.slots]
+            if res.intent != "[UNK]"
+            else []
+        )
         logger.info(answers)  # 如果为空，考虑加一个
 
         fallback_answer = None

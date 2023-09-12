@@ -1,3 +1,4 @@
+from typing import overload
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ai.pipeline import MedQAPipeline, PipelineResult
@@ -13,6 +14,16 @@ async def update_stats(db: AsyncSession, pr: PipelineResult):
         await crud.counter.inc(db, EntityCount, a.entity)
     for t in pr.tags:
         await crud.counter.inc(db, WordCount, t)
+
+
+@overload
+async def qa(db: AsyncSession, question: str) -> PipelineResult:
+    ...
+
+
+@overload
+async def qa(db: AsyncSession, question: list[str]) -> list[PipelineResult]:
+    ...
 
 
 async def qa(db: AsyncSession, question: str | list[str]):
