@@ -27,7 +27,7 @@ class Init:
         self.fake = Faker("zh_CN")
 
     def get_datetime(self) -> datetime:
-        return self.fake.date_time_between_dates(datetime(2023, 9, 1), datetime(2023, 9, 13))
+        return self.fake.date_time_between_dates(datetime(2023, 8, 21), datetime(2023, 9, 13))
 
     def get_datetime_pair(self) -> tuple[datetime, datetime]:
         dt1 = self.get_datetime()
@@ -74,50 +74,48 @@ class Init:
     async def init_users(self, db: AsyncSession, num: int):
         all_usernames = Path("../data/nick_name.txt").read_text("utf8").splitlines()
         usernames = random.choices(all_usernames, k=num)
-        self.users.extend(
-            [
-                await crud.user.create(
-                    db,
-                    obj_in=UserCreate(
-                        username=settings.FIRST_SUPERUSER,
-                        password=settings.FIRST_SUPERUSER_PASSWORD,
-                        is_superuser=True,
-                        role_id=self.role_super2.id,
-                    ),
+        self.superusers = [
+            await crud.user.create(
+                db,
+                obj_in=UserCreate(
+                    username=settings.FIRST_SUPERUSER,
+                    password=settings.FIRST_SUPERUSER_PASSWORD,
+                    is_superuser=True,
+                    role_id=self.role_super2.id,
                 ),
-                await crud.user.create(
-                    db,
-                    obj_in=UserCreate(
-                        username="admin",
-                        password=settings.FIRST_SUPERUSER_PASSWORD,
-                        is_superuser=True,
-                        role_id=self.role_super2.id,
-                    ),
+            ),
+            await crud.user.create(
+                db,
+                obj_in=UserCreate(
+                    username="admin",
+                    password=settings.FIRST_SUPERUSER_PASSWORD,
+                    is_superuser=True,
+                    role_id=self.role_super2.id,
                 ),
-                await crud.user.create(
-                    db,
-                    obj_in=UserCreate(
-                        username="dev",
-                        password=settings.FIRST_SUPERUSER_PASSWORD,
-                        is_superuser=True,
-                        role_id=self.role_super.id,
-                    ),
+            ),
+            await crud.user.create(
+                db,
+                obj_in=UserCreate(
+                    username="dev",
+                    password=settings.FIRST_SUPERUSER_PASSWORD,
+                    is_superuser=True,
+                    role_id=self.role_super.id,
                 ),
-            ]
-        )
+            ),
+        ]
 
         def make_user(i: int):
             return User(
                 username=usernames[i],
                 hashed_password=get_password_hash(self.fake.password()),
-                email=self.fake.ascii_email() if random.random() < 0.4 else None,
-                phone=self.fake.phone_number() if random.random() < 0.5 else None,
-                name=self.fake.name() if random.random() < 0.3 else None,
+                email=self.fake.ascii_email() if random.random() < 0.6 else None,
+                phone=self.fake.phone_number() if random.random() < 0.7 else None,
+                name=self.fake.name() if random.random() < 0.5 else None,
                 role=self.role_norm,
             )
 
         users = await self.add_batch(db, [make_user(i) for i in range(num)])
-        self.users.extend(users)
+        self.users = self.superusers + users
 
     async def init_chats(self, db: AsyncSession, num: int):
         self.chats = [
@@ -148,8 +146,6 @@ class Init:
 
         self.messages = list[Message]()
 
-        self.users = await crud.user.gets(db)
-
         self.chats = [
             Chat(user=random.choice(self.users), title="", create_time=self.get_datetime())
             for _ in range(num_chats)
@@ -158,13 +154,16 @@ class Init:
 
         for _ in range(num_messages):
             dt = self.get_datetime()
-            msgs = await chat_service.qa(
-                db, random.choice(self.chats), random.choice(data["title"]), ""
-            )
+            chat = random.choice(self.chats)
+            question = random.choice(data["title"])
+            if not chat.title:
+                chat.title = question
+            msgs = await chat_service.qa(db, chat, question, "")
             for msg in msgs:
                 msg.send_time = dt
             self.messages.extend(msgs)
             # 现在这些都已经存库里了
+        await self.add_batch(db, self.chats)
 
     async def init_feedbacks(self, db: AsyncSession, num: int):
         all_feedbacks = Path("../data/comment.txt").read_text("utf8").splitlines()
@@ -179,6 +178,7 @@ class Init:
                     mark_like=random.choices((True, False), (0.5, 0.5))[0],
                     mark_dislike=random.choices((True, False), (0.3, 0.7))[0],
                     content=random.choice(all_feedbacks) if random.random() < 0.2 else "",
+                    update_time=self.get_datetime(),
                 )
                 for msg in msg_samples
             ],
@@ -186,8 +186,6 @@ class Init:
 
     async def init_recommends(self, db: AsyncSession, num: int):
         all_recs = pd.read_csv("../data/recommend.csv")
-
-        self.superusers = [u for u in await crud.user.gets(db) if u.is_superuser]
 
         await self.add_batch(
             db,
@@ -201,6 +199,25 @@ class Init:
                 for i in range(num)
             ],
         )
+
+    async def init_complaints(self, db: AsyncSession, num: int):
+        all_complaints = Path("../data/report.txt").read_text("utf8").splitlines()
+        # self.users = await crud.user.gets(db)
+        # self.superusers = [await crud.user.get_one(db, 1), await crud.user.get_one(db, 2),await crud.user.get_one(db, 3)]
+        
+        def make_complaint():
+            c = Complaint(
+                category=random.choice(["信息不准确", "信息不完整", "响应时间长", "其他问题", "其他问题", "其他问题"]),
+                content=random.choice(all_complaints),
+                user=random.choice(self.users),
+                create_time=self.get_datetime(),
+            )
+            if random.random() < 0.4:
+                c.admin = random.choice(self.superusers)
+                c.create_time, c.resolve_time = self.get_datetime_pair()
+            return c
+
+        await self.add_batch(db, [make_complaint() for _ in range(num)])
 
     async def init_shares(self, db: AsyncSession, num: int):
         for _ in range(num):
@@ -218,13 +235,14 @@ class Init:
 
     async def __call__(self, db: AsyncSession):
         await self.init_perms(db)
-        await self.init_users(db, 100)
+        await self.init_users(db, 50)
         # await self.init_chats(db, 200)
         # await self.init_messages(db, 1000)
-        await self.init_chat_messages(db, 100, 1000)
-        await self.init_feedbacks(db, 200)
-        await self.init_shares(db, 20)
+        await self.init_chat_messages(db, 200, 2000)
+        await self.init_feedbacks(db, 400)
+        await self.init_shares(db, 50)
         await self.init_recommends(db, 18)
+        await self.init_complaints(db, 100)
 
 
 async def init_db():
@@ -244,7 +262,7 @@ async def init_db():
             ini = Init()
             with no_echo(engine):
                 await ini(db)
-        # else:
-        #     ini = Init()
-        #     with no_echo(engine):
-        #         await ini.init_chat_messages(db, 100, 1000)
+        else:
+            ini = Init()
+            with no_echo(engine):
+                await ini.init_complaints(db, 100)
