@@ -37,6 +37,7 @@ class PermUpdate(PermBase):
 
 class RoleBase(SQLModel):
     name: str
+    label: str
     enabled: bool = True
 
 
