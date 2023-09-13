@@ -9,7 +9,7 @@ from aiapp.models import BaseCount, EntityCount, IntentCount, WordCount
 async def make_dict(db: AsyncSession, model: Type[BaseCount], trans: dict[str, str] | None = None):
     if trans is None:
         trans = {}
-    res = await crud.counter.gets(db, model)
+    res = await crud.counter.get_tops(db, model, 100)
     return {trans.get(c.key, c.key): c.value for c in res}
 
 
