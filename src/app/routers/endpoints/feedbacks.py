@@ -13,7 +13,7 @@ router = APIRouter()
 async def get_feedback_stats(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    # user: models.User = Depends(deps.get_current_active_superuser),
+    user: models.User = Depends(deps.get_current_active_superuser),
 ):
     return await feedback_service.get_stats(db)
 

@@ -12,6 +12,7 @@ class SimpleNLP:
 
 
 if __name__ == "__main__":
+    from pprint import pprint
     nlp = SimpleNLP()
     sents = [
         "查询预防感冒的措施。",

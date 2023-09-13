@@ -8,6 +8,7 @@ from app.crud.base import CRUDBase
 from app.models import Perm, User, UserCreate, UserUpdate
 from app.utils.sqlutils import time_now
 
+
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     """def get_by_email(self, db: AsyncSession, *, email: str) -> Optional[User]:
     return db.query(User).filter(User.email == email).first()"""
@@ -48,9 +49,15 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
 
     def is_superuser(self, user: User) -> bool:
         return user.is_superuser
-    
+
     async def get_perms(self, db: AsyncSession, user: User) -> list[Perm]:
         return await db.run_sync(lambda _: user.role.perms)
+
+    async def count_by_register_date(self, db: AsyncSession):
+        return await self.count_by_date(db, User.create_time)
+
+    async def count_by_login_date(self, db: AsyncSession):
+        return await self.count_by_date(db, User.login_time)
 
 
 user = CRUDUser(User)

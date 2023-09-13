@@ -14,7 +14,7 @@ router = APIRouter()
 async def get_chat_stats(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    # user: models.User = Depends(deps.get_current_active_superuser),
+    user: models.User = Depends(deps.get_current_active_superuser),
 ):
     return await chat_service.get_stats(db)
 
@@ -27,18 +27,20 @@ async def get_all_chats(
     user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """(Admin) Get all chats."""
-    return await crud.chat.get_page(db, page=q)
+
+    return await crud.chat.get_page(db, page=q, transformer=chat_service.to_reads_wrapped(db))
 
 
 @router.get("/me", response_model=list[models.ChatRead])
-async def get_chats(
+async def get_my_chats(
     *,
     db: AsyncSession = Depends(deps.get_db),
     user: models.User = Depends(deps.get_current_active_user),
 ):
     """Get chats of current user."""
     chats = await crud.chat.get_by_user(db, user=user)
-    return await from_orm_async(db, models.ChatRead, chats)
+    chats2 = await chat_service.get_shared_chats(db, user)  # 还需要获取用户分享得到的
+    return await chat_service.to_reads(db, chats + chats2)
 
 
 @router.post("/", response_model=models.ChatRead)
@@ -51,7 +53,7 @@ async def create_chat(
     """Create a chat of current user."""
     data.user_id = current_user.id
     chat = await crud.chat.create(db, obj_in=data)
-    return await from_orm_async(db, models.ChatRead, chat)
+    return await chat_service.to_read(db, chat)
 
 
 @router.delete("/{id}", response_model=str)
@@ -89,7 +91,7 @@ async def update_title(
 ):
     chat = await chat_service.access_chat(db, chat_id=chat_id, user=current_user)
     chat = await chat_service.update_title(db, chat=chat, title=data.title)
-    return await from_orm_async(db, models.ChatRead, chat)
+    return await chat_service.to_read(db, chat)
 
 
 @router.post("/{chat_id}")
@@ -101,10 +103,10 @@ async def send_question(
     hint: str | None = Body(None),
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
-    chat = await chat_service.access_chat(db, chat_id=chat_id, user=current_user, allow_admin=False, update_time=True)
-    return await chat_service.qa(
-        db, chat=chat, question=question, hint=hint
+    chat = await chat_service.access_chat(
+        db, chat_id=chat_id, user=current_user, allow_admin=False, update_time=True
     )
+    return await chat_service.qa(db, chat=chat, question=question, hint=hint)
 
 
 @router.post("/{chat_id}/note", response_model=models.MessageRead)

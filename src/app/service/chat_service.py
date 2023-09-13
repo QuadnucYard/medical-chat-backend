@@ -1,5 +1,6 @@
 from datetime import datetime
 import random
+from typing import Sequence
 
 import aiohttp
 from faker import Faker
@@ -9,7 +10,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app import crud
 from app.core.config import settings
 from app.db.utils import from_orm_async
-from app.models.chat import Chat, ChatReadWithMessages
+from app.models.chat import Chat, ChatRead, ChatReadWithMessages
 from app.models.feedback import Feedback, FeedbackRead
 from app.models.message import (
     Message,
@@ -19,8 +20,25 @@ from app.models.message import (
     NoteCreate,
 )
 from app.models.user import User
+from app.service import share_service
 from app.utils.sqlutils import is_today, is_yesterday, time_now
 from app.utils.statutils import counter_helper
+
+
+async def to_read(db: AsyncSession, chat: Chat) -> ChatRead:
+    link = await share_service.get_chat_link(db, chat)
+    return await db.run_sync(lambda _: ChatRead.from_orm(chat, dict(link=link)))
+
+
+async def to_reads(db: AsyncSession, chats: Sequence[Chat]) -> list[ChatRead]:
+    return [await to_read(db, c) for c in chats]
+
+
+def to_reads_wrapped(db: AsyncSession):
+    async def wrapped(chats: Sequence[Chat]):
+        return await to_reads(db, chats)
+
+    return wrapped
 
 
 async def access_chat(
@@ -54,6 +72,12 @@ async def access_chat(
     if update_time:
         await update_chat_time(db, chat)
     return chat
+
+
+async def get_shared_chats(db: AsyncSession, user: User):
+    return await db.run_sync(
+        lambda _: [l.link.chat for l in user.links if crud.chat.is_valid(l.link.chat)]
+    )
 
 
 async def update_chat_time(db: AsyncSession, chat: Chat) -> Chat:
@@ -103,6 +127,7 @@ async def qa(db: AsyncSession, chat: Chat, question: str, hint: str | None):
 
 async def get_chat_with_feedbacks(db: AsyncSession, chat: Chat, user: User):
     """Get a chat with feedbacks loaded."""
+
     def feedback_orm(fb: Feedback | None):
         return FeedbackRead.from_orm(fb) if fb else None
 
@@ -117,7 +142,8 @@ async def get_chat_with_feedbacks(db: AsyncSession, chat: Chat, user: User):
                     dict(own_feedback=feedback_orm(await crud.feedback.get(db, (msg.id, user.id)))),
                 )
                 for msg in await db.run_sync(lambda _: chat.messages)
-            ]
+            ],
+            link=await share_service.get_chat_link(db, chat),
         ),
     )
 

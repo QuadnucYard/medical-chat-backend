@@ -7,11 +7,21 @@ from fastapi_pagination import Page
 from app import crud, models
 from app.core.security import verify_password
 from app.routers import deps
+from app.service import user_service
 from app.utils.futils import save_file
 
 router = APIRouter()
 
 logger = Logger(__file__)
+
+
+@router.get("/stat", tags=["stat"])
+async def get_user_stats(
+    *,
+    db: AsyncSession = Depends(deps.get_db),
+    user: models.User = Depends(deps.get_current_active_superuser),
+):
+    return await user_service.get_stats(db)
 
 
 @router.get("/", response_model=Page[models.UserRead])
@@ -52,7 +62,7 @@ async def create_user(
     return user
 
 
-@router.get("/me", response_model=models.UserRead)
+@router.get("/me", response_model=models.UserReadWithRole)
 async def read_user_me(
     db: AsyncSession = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -60,7 +70,7 @@ async def read_user_me(
     """
     Get current user.
     """
-    return await db.run_sync(lambda _: models.UserRead.from_orm(current_user))
+    return await db.run_sync(lambda _: models.UserReadWithRole.from_orm(current_user))
 
 
 @router.put("/me", response_model=models.UserRead)

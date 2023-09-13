@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Generic, Sequence, Type, TypedDict, TypeVar
+from fastapi import HTTPException
 
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination import Page
@@ -38,6 +39,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def get(self, db: AsyncSession, id: Any) -> ModelType | None:
         return await db.get(self.model, id)
+    
+    async def get_one(self, db: AsyncSession, id: Any) -> ModelType:
+        ret = await self.get(db, id)
+        if not ret:
+            raise HTTPException(404)
+        return ret
 
     async def gets(self, db: AsyncSession, *, offset: int = 0, limit: int = 100) -> list[ModelType]:
         stmt = select(self.model).offset(offset).limit(limit)

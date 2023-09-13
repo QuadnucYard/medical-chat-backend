@@ -13,7 +13,7 @@ router = APIRouter()
 async def get_complaint_stats(
     *,
     db: AsyncSession = Depends(deps.get_db),
-    # current_user: models.User = Depends(deps.get_current_active_superuser),
+    current_user: models.User = Depends(deps.get_current_active_superuser),
 ):
     """(Admin) Get complaint stats."""
     return await complaint_service.get_stats(db)

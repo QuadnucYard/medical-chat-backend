@@ -1,3 +1,4 @@
+jieba
 more_itertools
 numpy
 py2neo

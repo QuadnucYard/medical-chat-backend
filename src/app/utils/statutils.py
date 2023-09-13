@@ -13,7 +13,7 @@ async def counter_helper(
     res = (
         pd.concat(
             [
-                pd.DataFrame(await cnt[0](db)).set_index("date").rename(columns={"count": cnt[1]})
+                pd.DataFrame(await cnt[0](db), columns=["date", "count"]).set_index("date").rename(columns={"count": cnt[1]})
                 for cnt in counters
             ],
             axis=1,
