@@ -50,7 +50,7 @@ class JointIntentSlotDetector:
         tokenizer_path: str,
         intent_label_path: str,
         slot_label_path: str,
-        **kwargs
+        **kwargs,
     ):
         intent_dict = LabelDict.load_dict(intent_label_path)
         slot_dict = LabelDict.load_dict(slot_label_path)
@@ -169,14 +169,14 @@ class JointIntentSlotDetector:
         intent_labels = self._predict_intent_labels(intent_probs)
 
         slot_values = self._extract_slots_from_labels(
-            inputs["input_ids"], slot_labels, inputs["attention_mask"]  # type: ignore
+            inputs["input_ids"], slot_labels, inputs["attention_mask"]
         )
 
         outputs = [
             DetectResult(
                 text=text[i],
-                tokens=[self.tokenizer.decode(x) for x in inputs["input_ids"][i]],  # type: ignore
-                token_pos=self._match_tokens(text[i], inputs["input_ids"][i]),  # type: ignore
+                tokens=[self.tokenizer.decode(x) for x in inputs["input_ids"][i]],
+                token_pos=self._match_tokens(text[i], inputs["input_ids"][i]),
                 intent=intent_labels[i],
                 slots=slot_values[i],
                 slot_labels=slot_labels[i],

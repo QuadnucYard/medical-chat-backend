@@ -6,9 +6,9 @@ from app.models.recommendation import Recommendation, RecommendationCreate
 
 
 class CRUDRecommend(CRUDBase[Recommendation, RecommendationCreate, SQLModel]):
-    async def get_active_ones(self, db: AsyncSession) -> list[Recommendation]:
+    async def get_active_ones(self, db: AsyncSession):
         stmt = select(Recommendation).where(Recommendation.remove_time == None)
-        return (await db.exec(stmt)).all()  # type: ignore
+        return (await db.scalars(stmt)).all()
 
 
 recommend = CRUDRecommend(Recommendation)

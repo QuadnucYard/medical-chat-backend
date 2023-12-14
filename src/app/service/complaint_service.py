@@ -12,7 +12,7 @@ async def get_all_complaints(db: AsyncSession, page: PageParams, resolved: bool 
     """Get all complaints or resolved/unresolved"""
     if resolved is None:
         return await crud.complaint.get_page(db, page=page)
-    if resolved == True:
+    if resolved:
         return await crud.complaint.get_page_resolved(db, page=page)
     else:
         return await crud.complaint.get_page_unresolved(db, page=page)

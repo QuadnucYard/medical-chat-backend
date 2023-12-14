@@ -7,14 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app import crud, models
 from app.core import security
 from app.core.config import settings
-from app.core.security import get_password_hash
 from app.routers import deps
-
-# from app.utils import (
-#     generate_password_reset_token,
-#     send_reset_password_email,
-#     verify_password_reset_token,
-# )
 
 router = APIRouter()
 
@@ -36,7 +29,7 @@ async def register(
             status_code=400,
             detail="The user with this username already exists in the system.",
         )
-    user = await crud.user.create(db, obj_in=models.UserCreate.from_orm(user_in, dict(role_id=1)))
+    user = await crud.user.create(db, obj_in=models.UserCreate.model_validate(user_in, update={"role_id": 1}))
     return user
 
 
@@ -48,9 +41,7 @@ async def login_access_token(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = await crud.user.authenticate(
-        db, username=form_data.username, password=form_data.password
-    )
+    user = await crud.user.authenticate(db, username=form_data.username, password=form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not crud.user.is_valid(user):
@@ -81,7 +72,7 @@ async def test_token(
         perm and (perm not in await crud.user.get_perms(db, current_user))
     ):
         raise HTTPException(status_code=400, detail="The user doesn't have enough privileges")
-    return await db.run_sync(lambda _: models.UserReadWithRole.from_orm(current_user))
+    return await db.run_sync(lambda _: models.UserReadWithRole.model_validate(current_user))
 
 
 @router.post("/auth/logout")

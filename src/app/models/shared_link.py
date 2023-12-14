@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 
 
 class SharedLinkBase(SQLModel):
-    create_time: datetime
     expire_time: datetime
     max_uses: int  # -1 representing infinite
     use_times: int = 0

@@ -5,14 +5,12 @@ from dataclasses import dataclass
 from pprint import pprint
 from typing import TYPE_CHECKING, overload
 
+from .config import settings
+from .kgqa.answer import Answer, AnswerResult
+from .logging import logger
 from ai.slu.nlp import SimpleNLP
 
-from .config import settings
-from .logging import logger
-
 logger.info("Start pipeline")
-
-from .kgqa.answer import Answer, AnswerResult
 
 if TYPE_CHECKING:
     from .slu.detector import DetectResult
@@ -61,11 +59,7 @@ class MedQAPipeline:
         await self.load_model_task
         res = self.detector.detect(question)
         logger.info(res)
-        answers = (
-            [self.answerer.create_answer(res.intent, r.text) for r in res.slots]
-            if res.intent != "[UNK]"
-            else []
-        )
+        answers = [self.answerer.create_answer(res.intent, r.text) for r in res.slots] if res.intent != "[UNK]" else []
         logger.info(answers)  # 如果为空，考虑加一个
 
         fallback_answer = None

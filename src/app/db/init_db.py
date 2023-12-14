@@ -1,21 +1,22 @@
-from datetime import datetime
 import os
-from pathlib import Path
 import random
+from datetime import datetime
+from pathlib import Path
 from typing import Any
-from faker import Faker
-import pandas as pd
-from sqlmodel import SQLModel
-from app.core.permission import Permission
 
-from app.core.security import get_password_hash
-from app.db.utils import no_echo
+import pandas as pd
+from faker import Faker
+from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from aiapp.models import *
-from app.models import *
 from app import crud
 from app.core.config import settings
-from app.db.session import SessionLocal, engine, AsyncSession
+from app.core.permission import Permission
+from app.core.security import get_password_hash
+from app.db.session import SessionLocal, engine
+from app.db.utils import no_echo
+from app.models import *
 from app.service import share_service
 
 
@@ -202,9 +203,7 @@ class Init:
 
     async def init_complaints(self, db: AsyncSession, num: int):
         all_complaints = Path("../data/report.txt").read_text("utf8").splitlines()
-        # self.users = await crud.user.gets(db)
-        # self.superusers = [await crud.user.get_one(db, 1), await crud.user.get_one(db, 2),await crud.user.get_one(db, 3)]
-        
+
         def make_complaint():
             c = Complaint(
                 category=random.choice(["信息不准确", "信息不完整", "响应时间长", "其他问题", "其他问题", "其他问题"]),

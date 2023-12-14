@@ -1,9 +1,7 @@
-from datetime import datetime
 import random
+from datetime import datetime
 from typing import Sequence
 
-import aiohttp
-from faker import Faker
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -27,7 +25,7 @@ from app.utils.statutils import counter_helper
 
 async def to_read(db: AsyncSession, chat: Chat) -> ChatRead:
     link = await share_service.get_chat_link(db, chat)
-    return await db.run_sync(lambda _: ChatRead.from_orm(chat, dict(link=link)))
+    return await db.run_sync(lambda _: ChatRead.model_validate(chat, update={"link": link}))
 
 
 async def to_reads(db: AsyncSession, chats: Sequence[Chat]) -> list[ChatRead]:
@@ -42,12 +40,7 @@ def to_reads_wrapped(db: AsyncSession):
 
 
 async def access_chat(
-    db: AsyncSession,
-    chat_id: int,
-    user: User,
-    *,
-    allow_admin: bool = True,
-    update_time: bool = False
+    db: AsyncSession, chat_id: int, user: User, *, allow_admin: bool = True, update_time: bool = False
 ) -> Chat:
     """Try accessing a chat.
 
@@ -75,9 +68,7 @@ async def access_chat(
 
 
 async def get_shared_chats(db: AsyncSession, user: User):
-    return await db.run_sync(
-        lambda _: [l.link.chat for l in user.links if crud.chat.is_valid(l.link.chat)]
-    )
+    return await db.run_sync(lambda _: [ul.link.chat for ul in user.links if crud.chat.is_valid(ul.link.chat)])
 
 
 async def update_chat_time(db: AsyncSession, chat: Chat) -> Chat:
@@ -94,26 +85,25 @@ async def delete_chat(db: AsyncSession, chat: Chat) -> Chat:
 
 async def qa(db: AsyncSession, chat: Chat, question: str, hint: str | None):
     """Perferm Q&A. It saves the question and answer messages to DB."""
+    ans_txts: list[str]
     if settings.ENABLE_KGQA:
+        import aiohttp
+
         async with aiohttp.ClientSession() as session:
             async with session.post(settings.KGQA_API, data=question) as response:
                 obj = await response.json()
                 que_text = obj["marked_input"]
-                ans_txts = (
-                    [a["marked_text"] for a in obj["answers"]]
-                    if obj["answers"]
-                    else [obj["fallback_answer"]]
-                )
+                ans_txts = [a["marked_text"] for a in obj["answers"]] if obj["answers"] else [obj["fallback_answer"]]
     else:
+        from faker import Faker
+
         fake = Faker("zh_CN")
         que_text = question
-        ans_txts: list[str] = [fake.text() for _ in range(random.randint(1, 3))]
+        ans_txts = [fake.text() for _ in range(random.randint(1, 3))]
 
     question_msg = await crud.message.create(
         db,
-        MessageCreate(
-            chat_id=chat.id, type=MessageType.Question, content=que_text, remark=hint or ""
-        ),
+        MessageCreate(chat_id=chat.id, type=MessageType.Question, content=que_text, remark=hint or ""),
     )
     answer_msgs = [
         await crud.message.create(
@@ -129,22 +119,22 @@ async def get_chat_with_feedbacks(db: AsyncSession, chat: Chat, user: User):
     """Get a chat with feedbacks loaded."""
 
     def feedback_orm(fb: Feedback | None):
-        return FeedbackRead.from_orm(fb) if fb else None
+        return FeedbackRead.model_validate(fb) if fb else None
 
     return await from_orm_async(
         db,
         ChatReadWithMessages,
         chat,
-        dict(
-            messages=[
-                MessageReadWithFeedback.from_orm(
+        {
+            "messages": [
+                MessageReadWithFeedback.model_validate(
                     msg,
-                    dict(own_feedback=feedback_orm(await crud.feedback.get(db, (msg.id, user.id)))),
+                    update={"own_feedback": feedback_orm(await crud.feedback.get(db, (msg.id, user.id)))},
                 )
                 for msg in await db.run_sync(lambda _: chat.messages)
             ],
-            link=await share_service.get_chat_link(db, chat),
-        ),
+            "link": await share_service.get_chat_link(db, chat),
+        },
     )
 
 
@@ -159,9 +149,7 @@ async def create_note(db: AsyncSession, chat: Chat, note_in: NoteCreate):
     """Create a note in the chat."""
     return await crud.message.create(
         db,
-        MessageCreate(
-            chat_id=chat.id, type=MessageType.Note, content=note_in.content, remark=note_in.remark
-        ),
+        MessageCreate(chat_id=chat.id, type=MessageType.Note, content=note_in.content, remark=note_in.remark),
     )
 
 
@@ -183,8 +171,6 @@ async def get_stats(db: AsyncSession):
         "total_chats_today": await crud.chat.count_if(db, is_today(Chat.create_time)),
         "total_messages_today": await crud.message.count_if(db, is_today(Message.send_time)),
         "total_chats_yesterday": await crud.chat.count_if(db, is_yesterday(Chat.create_time)),
-        "total_messages_yesterday": await crud.message.count_if(
-            db, is_yesterday(Message.send_time)
-        ),
+        "total_messages_yesterday": await crud.message.count_if(db, is_yesterday(Message.send_time)),
         "by_date": await get_temporal_stats(db),
     }

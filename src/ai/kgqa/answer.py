@@ -31,7 +31,11 @@ class Answer:
                 "{0}的治愈概率约为：{1}",
                 "治好{0}的概率约为：{1}",
             ],
-            "disease_cureway": ["{0}的治疗方式有：{1}", "{0}可以采取的治疗方式有：{1}", "患上{0}应该尝试以下方式治疗：{1}"],
+            "disease_cureway": [
+                "{0}的治疗方式有：{1}",
+                "{0}可以采取的治疗方式有：{1}",
+                "患上{0}应该尝试以下方式治疗：{1}",
+            ],
             "disease_desc": ["{0}的简介：{1}", "{0}的相关信息如下：{1}", "{0}的主要特征为：{1}"],
             "disease_do_food": [
                 "患有{0}建议食用{1}等食物",
@@ -85,8 +89,7 @@ class Answer:
                 return self.searcher.entity_relations(entity, ["common_drug", "recommend_drug"])
             case "disease_check":  # 查询疾病应该进行的检查
                 return self.searcher.entity_relation(entity, "need_check")
-        print("Unknown", question_type)
-        assert False
+        raise AssertionError(f"Unknown {question_type}")
 
     def extract_search_results(self, answers: list[dict[str, Any]]) -> list[str]:
         if not answers:
@@ -94,10 +97,9 @@ class Answer:
         if "y.name" in answers[0]:
             # 一堆{x.name, y.name}
             return list(map(itemgetter("y.name"), answers))
-        else:
-            key = first((k for k in answers[0].keys() if k != "x.name"))
-            val = answers[0][key]
-            return val if isinstance(val, list) else [val]
+        key = first(k for k in answers[0].keys() if k != "x.name")
+        val = answers[0][key]
+        return val if isinstance(val, list) else [val]
 
     def create_answer(self, question_type: str, entity: str) -> AnswerResult:
         """调用serach_answer函数，获得查询结果，依据结果生成对应的自然语言回答的字符串"""
@@ -115,7 +117,7 @@ class Answer:
 
     def get_answer_none(self):
         return random.choice(self.answer_none)
-    
+
     def get_answer_unk(self):
         return random.choice(self.answer_unk)
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from fastapi_pagination import Page
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app import crud, models
+from app import models
 from app.routers import deps
 from app.service import recommend_service
 

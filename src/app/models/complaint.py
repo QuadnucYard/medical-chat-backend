@@ -6,7 +6,7 @@ from sqlmodel import Field, Relationship, SQLModel
 from app.utils.sqlutils import time_now
 
 if TYPE_CHECKING:
-    from .user import User
+    from .user import User, UserReadPartial
 
 
 class ComplaintBase(SQLModel):
@@ -24,11 +24,11 @@ class Complaint(ComplaintBase, table=True):
 
     user: "User" = Relationship(
         back_populates="posted_complaints",
-        sa_relationship_kwargs=dict(primaryjoin="Complaint.user_id==User.id", lazy="joined"),
+        sa_relationship_kwargs={"primaryjoin": "Complaint.user_id==User.id", "lazy": "joined"},
     )
     admin: "User" = Relationship(
         back_populates="resolved_complaints",
-        sa_relationship_kwargs=dict(primaryjoin="Complaint.admin_id==User.id", lazy="joined"),
+        sa_relationship_kwargs={"primaryjoin": "Complaint.admin_id==User.id", "lazy": "joined"},
     )
 
 
@@ -59,8 +59,3 @@ __all__ = [
     "ComplaintCreate",
     "ComplaintResolve",
 ]
-
-
-from .user import UserReadPartial
-
-ComplaintReadDetailed.update_forward_refs()

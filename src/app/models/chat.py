@@ -3,11 +3,10 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-
 if TYPE_CHECKING:
-    from .user import User, UserReadPartial
-    from .shared_link import SharedLink
     from .message import Message, MessageReadWithFeedback
+    from .shared_link import SharedLink
+    from .user import User, UserReadPartial
 
 
 class ChatBase(SQLModel):
@@ -48,10 +47,3 @@ class ChatUpdate(SQLModel):
 
 
 __all__ = ["Chat", "ChatRead", "ChatReadWithMessages", "ChatCreate", "ChatUpdate"]
-
-from .message import MessageReadWithFeedback
-from .shared_link import SharedLink
-from .user import UserReadPartial
-
-ChatRead.update_forward_refs()
-ChatReadWithMessages.update_forward_refs()

@@ -1,7 +1,7 @@
 from pprint import pprint
 from typing import Any
-from more_itertools import flatten
 
+from more_itertools import flatten
 from py2neo import Graph
 
 from ..config import settings

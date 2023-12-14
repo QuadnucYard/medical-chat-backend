@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
-
-from transformers import BertPreTrainedModel, BertModel
+from transformers import BertModel, BertPreTrainedModel
 
 
 class BertMultiHeadJointClassification(BertPreTrainedModel):
@@ -10,7 +9,7 @@ class BertMultiHeadJointClassification(BertPreTrainedModel):
         num_seq_labels & num_token_labels : [head1_label_num, head2_label_num, ..., headn_label_num]
         """
         super().__init__(config)
-        
+
         self.seq_label_nums = seq_label_nums
         self.token_label_nums = token_label_nums
 
@@ -98,7 +97,7 @@ class BertMultiHeadJointClassification(BertPreTrainedModel):
             ]
             seq_loss = torch.cat(seq_loss_list).sum()
             loss = seq_loss if loss is None else loss + seq_loss
-            
+
         # if not return_dict:
         #     outputs = (logits,) + outputs[2:]
         #     return ((loss,) + output) if loss is not None else output

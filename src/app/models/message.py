@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-
 if TYPE_CHECKING:
     from .chat import Chat
     from .feedback import FeedbackRead
@@ -57,8 +56,3 @@ __all__ = [
     "MessageCreate",
     "NoteCreate",
 ]
-
-from .feedback import FeedbackRead
-
-
-MessageReadWithFeedback.update_forward_refs()

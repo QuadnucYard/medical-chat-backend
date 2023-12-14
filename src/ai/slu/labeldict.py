@@ -25,7 +25,7 @@ class LabelDict:
 
     @classmethod
     def load_dict(cls, load_path: Any, **kwargs):
-        with open(load_path, "r") as f:
+        with open(load_path) as f:
             labels = f.read().strip("\n").split("\n")
 
         return cls(labels, **kwargs)

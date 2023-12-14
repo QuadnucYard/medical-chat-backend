@@ -1,7 +1,7 @@
 import json
-from tqdm import tqdm
 
 from torch.utils.data import Dataset
+from tqdm import tqdm
 from transformers import BertTokenizer
 
 from ..labeldict import LabelDict
@@ -30,9 +30,7 @@ def get_slot_labels(text, slots, tokenizer):
                 pattern_tokens = tokenizer.tokenize(text_pattern)
                 if "".join(text_tokens[i : i + len(pattern_tokens)]) == "".join(pattern_tokens):
                     slot_matched = True
-                    slot_labels.extend(
-                        ["B_" + slot_label] + ["I_" + slot_label] * (len(pattern_tokens) - 1)
-                    )
+                    slot_labels.extend([f"B_{slot_label}"] + [f"I_{slot_label}"] * (len(pattern_tokens) - 1))
                     i += len(pattern_tokens)
                     break
 
@@ -62,9 +60,7 @@ class IntentSlotDataset(Dataset):
             intent_id = self.intent_label_dict[item["intent"]]
             input_ids = tokenizer.encode(item["text"])
 
-            assert len(input_ids) == len(
-                slot_ids
-            ), "slot label seq has different length than input seq"
+            assert len(input_ids) == len(slot_ids), "slot label seq has different length than input seq"
 
             self.data.append({"input_ids": input_ids, "slot_ids": slot_ids, "intent_id": intent_id})
         print("Finished processing all data.")
@@ -73,13 +69,9 @@ class IntentSlotDataset(Dataset):
             batch_intent_ids = [item["intent_id"] for item in batch_data]
             max_seq_length = max(len(item["input_ids"]) for item in batch_data)
             batch_input_ids = [
-                item["input_ids"] + [0] * (max_seq_length - len(item["input_ids"]))
-                for item in batch_data
+                item["input_ids"] + [0] * (max_seq_length - len(item["input_ids"])) for item in batch_data
             ]
-            batch_slot_ids = [
-                item["slot_ids"] + [0] * (max_seq_length - len(item["slot_ids"]))
-                for item in batch_data
-            ]
+            batch_slot_ids = [item["slot_ids"] + [0] * (max_seq_length - len(item["slot_ids"])) for item in batch_data]
 
             return batch_input_ids, batch_intent_ids, batch_slot_ids
 
@@ -88,7 +80,7 @@ class IntentSlotDataset(Dataset):
 
     @classmethod
     def load_from_path(cls, data_path, intent_label_path, slot_label_path, **kwargs):
-        with open(data_path, "r", encoding="utf8") as f:
+        with open(data_path, encoding="utf8") as f:
             raw_data = json.load(f)
 
         # with open(intent_template_path, 'r') as f:
@@ -97,10 +89,10 @@ class IntentSlotDataset(Dataset):
         # intent_labels = [item['intent'] for item in intent_templates]
         # slot_labels = [label for label in item['slots'] for item in intent_templates]
 
-        with open(intent_label_path, "r") as f:
+        with open(intent_label_path) as f:
             intent_labels = f.read().strip("\n").split("\n")
 
-        with open(slot_label_path, "r") as f:
+        with open(slot_label_path) as f:
             slot_labels = f.read().strip("\n").split("\n")
 
         return cls(raw_data, intent_labels, slot_labels, **kwargs)

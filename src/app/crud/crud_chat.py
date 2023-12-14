@@ -1,10 +1,10 @@
-from typing import Any, TypeGuard
-from sqlmodel import SQLModel, select
+from typing import TypeGuard
 
+from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.crud.base import CRUDBase
-from app.models.chat import Chat, ChatCreate, ChatRead
+from app.models.chat import Chat, ChatCreate
 from app.models.user import User
 
 

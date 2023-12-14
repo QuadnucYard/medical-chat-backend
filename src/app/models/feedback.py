@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
-    from .message import Message
-    from .user import User
+    from .message import Message, MessageRead
+    from .user import User, UserReadPartial
 
 
 class FeedbackBase(SQLModel):
@@ -47,9 +47,3 @@ class FeedbackUpdate(SQLModel):
 
 
 __all__ = ["Feedback", "FeedbackRead", "FeedbackReadWithMsgUser", "FeedbackUpdate"]
-
-
-from .message import MessageRead
-from .user import UserReadPartial
-
-FeedbackReadWithMsgUser.update_forward_refs()

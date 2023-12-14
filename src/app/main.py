@@ -6,9 +6,7 @@ from fastapi_pagination import add_pagination
 from app.core.config import settings
 from app.routers.api import api_router
 
-app = FastAPI(
-    title=settings.PROJECT_NAME, openapi_url=f"{settings.API_STR}/openapi.json"
-)
+app = FastAPI(title=settings.PROJECT_NAME, openapi_url=f"{settings.API_STR}/openapi.json")
 
 app.mount("/static", StaticFiles(directory="../static"), name="static")
 

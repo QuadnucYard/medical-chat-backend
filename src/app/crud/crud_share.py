@@ -12,7 +12,7 @@ class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, SharedLinkUpdate]):
         stmt = select(SharedUser).where(
             SharedUser.user_id == user_id, SharedUser.link_id == link_id
         )
-        return (await db.exec(stmt)).first() is not None  # type: ignore
+        return (await db.exec(stmt)).first() is not None
 
     async def get_shared_times(self, db: AsyncSession, link_id: str):
         link = await self.get(db, link_id)
@@ -42,7 +42,7 @@ class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, SharedLinkUpdate]):
             SharedLink.valid == True,
             SharedLink.expire_time >= datetime.now(),
         )
-        return (await db.exec(stmt)).first()  # type: ignore
+        return (await db.exec(stmt)).first()
 
 
 share = CRUDShare(SharedLink)

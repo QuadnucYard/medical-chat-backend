@@ -1,7 +1,9 @@
 import asyncio
-from typing import Any, Sequence, Type, TypeVar, overload
+from typing import Any, Type, TypeVar, overload
+
+from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlmodel import SQLModel
-from .session import AsyncSession, AsyncEngine
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 ModelType2 = TypeVar("ModelType2", bound=SQLModel)
@@ -33,20 +35,16 @@ async def from_orm_async(
     if isinstance(obj, list):
         return await asyncio.gather(*[from_orm_async(db, model, obj_) for obj_ in obj])
     else:
-        return await db.run_sync(lambda _: model.from_orm(obj, update))
+        return await db.run_sync(lambda _: model.model_validate(obj, update=update))
 
 
 @overload
-async def fetch_attrs(
-    db: AsyncSession, objs: ModelType, attribute_names: list[str] | str
-) -> ModelType:
+async def fetch_attrs(db: AsyncSession, objs: ModelType, attribute_names: list[str] | str) -> ModelType:
     ...
 
 
 @overload
-async def fetch_attrs(
-    db: AsyncSession, objs: list[ModelType], attribute_names: list[str] | str
-) -> list[ModelType]:
+async def fetch_attrs(db: AsyncSession, objs: list[ModelType], attribute_names: list[str] | str) -> list[ModelType]:
     ...
 
 

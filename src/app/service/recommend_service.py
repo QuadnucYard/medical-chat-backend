@@ -1,8 +1,9 @@
 from datetime import datetime
+
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud
-from app.models import User, Recommendation, RecommendationCreate, PageParams
+from app.models import PageParams, Recommendation, RecommendationCreate, User
 
 
 async def get_active_recommends(db: AsyncSession):
@@ -15,16 +16,14 @@ async def get_all_recommends(db: AsyncSession, page: PageParams, active: bool | 
     if active is None:
         return await crud.recommend.get_page(db, page=page)
     elif active:
-        return await crud.recommend.get_page_if(db, Recommendation.remove_time == None, page=page)
+        return await crud.recommend.get_page_if(db, Recommendation.remove_time == None, page=page)  # noqa: E711
     else:
-        return await crud.recommend.get_page_if(db, Recommendation.remove_time != None, page=page)
+        return await crud.recommend.get_page_if(db, Recommendation.remove_time != None, page=page)  # noqa: E711
 
 
 async def add_recommend(db: AsyncSession, obj_in: RecommendationCreate, user: User):
     """Add a new recommendation by the user."""
-    return await crud.recommend.add(
-        db, Recommendation(title=obj_in.title, content=obj_in.content, creator=user)
-    )
+    return await crud.recommend.add(db, Recommendation(title=obj_in.title, content=obj_in.content, creator=user))
 
 
 async def remove_recommend(db, rec_id: int, user: User):

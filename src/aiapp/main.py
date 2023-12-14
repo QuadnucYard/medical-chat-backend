@@ -1,9 +1,9 @@
 from fastapi import Body, Depends, FastAPI
-
-from aiapp.config import settings
-from aiapp import service
-from app.routers import deps
 from sqlmodel.ext.asyncio.session import AsyncSession
+
+from aiapp import service
+from aiapp.config import settings
+from app.routers import deps
 
 app = FastAPI(title=settings.PROJECT_NAME, openapi_url=f"{settings.API_STR}/openapi.json")
 

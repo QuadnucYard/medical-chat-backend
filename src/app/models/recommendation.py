@@ -22,10 +22,16 @@ class Recommendation(RecommendationBase, table=True):
     remove_time: datetime | None = None
 
     creator: "User" = Relationship(
-        sa_relationship_kwargs=dict(primaryjoin="Recommendation.creator_id==User.id", lazy="joined")
+        sa_relationship_kwargs={
+            "primaryjoin": "Recommendation.creator_id==User.id",
+            "lazy": "joined",
+        }
     )
     remover: Optional["User"] = Relationship(
-        sa_relationship_kwargs=dict(primaryjoin="Recommendation.remover_id==User.id", lazy="joined")
+        sa_relationship_kwargs={
+            "primaryjoin": "Recommendation.remover_id==User.id",
+            "lazy": "joined",
+        }
     )
 
 
@@ -50,7 +56,3 @@ __all__ = [
     "RecommendationReadWithOperator",
     "RecommendationCreate",
 ]
-
-from .user import UserReadPartial
-
-RecommendationReadWithOperator.update_forward_refs()

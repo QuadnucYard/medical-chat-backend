@@ -3,6 +3,7 @@ from typing import Any
 
 def _init_logger():
     import logging
+
     import colorlog
 
     logger = colorlog.getLogger("medtalk-kbqa")

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi_pagination import Page
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -31,7 +31,7 @@ async def delete_share(
     "Delete a existent shared link by link. Current user must be the chat owner or admin."
     share = await crud.share.get_one(db, id)
     assert share.chat_id
-    chat = await chat_service.access_chat(db, share.chat_id, current_user)
+    await chat_service.access_chat(db, share.chat_id, current_user)
     share.valid = False
     return await crud.share.add(db, share)
 

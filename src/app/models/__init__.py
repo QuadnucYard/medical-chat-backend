@@ -9,3 +9,11 @@ from .shared_link import *
 from .shared_user import *
 from .token import Token, TokenPayload
 from .user import *
+
+ChatRead.model_rebuild()
+ChatReadWithMessages.model_rebuild()
+ComplaintReadDetailed.model_rebuild()
+FeedbackReadWithMsgUser.model_rebuild()
+MessageReadWithFeedback.model_rebuild()
+RecommendationReadWithOperator.model_rebuild()
+UserReadWithRole.model_rebuild()

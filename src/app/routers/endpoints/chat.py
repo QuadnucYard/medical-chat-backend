@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends
 from fastapi_pagination import Page
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud, models
-from app.db.utils import from_orm_async
 from app.routers import deps
 from app.service import chat_service
 
@@ -103,9 +102,7 @@ async def send_question(
     hint: str | None = Body(None),
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
-    chat = await chat_service.access_chat(
-        db, chat_id=chat_id, user=current_user, allow_admin=False, update_time=True
-    )
+    chat = await chat_service.access_chat(db, chat_id=chat_id, user=current_user, allow_admin=False, update_time=True)
     return await chat_service.qa(db, chat=chat, question=question, hint=hint)
 
 

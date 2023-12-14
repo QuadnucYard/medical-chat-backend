@@ -1,5 +1,6 @@
 from pprint import pprint
-from pydantic import BaseSettings
+
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -12,6 +13,7 @@ class Settings(BaseSettings):
     TOKENIZER_PATH: str = "./ai/data/tokenizer"
     INTENT_LABEL_PATH: str = "./ai/data/labels/intent_labels.txt"
     SLOT_LABEL_PATH: str = "./ai/data/labels/slot_labels.txt"
+
 
 settings = Settings()
 pprint(settings)

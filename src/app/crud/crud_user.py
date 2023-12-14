@@ -15,18 +15,16 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
 
     async def get_by_username(self, db: AsyncSession, *, username: str) -> User | None:
         stmt = select(User).where(User.username == username)
-        return (await db.exec(stmt)).first()  # type: ignore
+        return await db.scalar(stmt)
 
-    async def create(self, db: AsyncSession, *, obj_in: UserCreate) -> User:
-        db_obj = User.from_orm(obj_in, {"hashed_password": get_password_hash(obj_in.password)})
+    async def create(self, db: AsyncSession, obj_in: UserCreate) -> User:
+        db_obj = User.model_validate(obj_in, update={"hashed_password": get_password_hash(obj_in.password)})
         db.add(db_obj)
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
 
-    async def update(
-        self, db: AsyncSession, *, db_obj: User, obj_in: UserUpdate | dict[str, Any]
-    ) -> User:
+    async def update(self, db: AsyncSession, *, db_obj: User, obj_in: UserUpdate | dict[str, Any]) -> User:
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:

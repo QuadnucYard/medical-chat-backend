@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi_pagination import Page
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -37,5 +37,4 @@ async def update_feedback(
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
     """Update feedback of the user. Create feedback if necessary."""
-    return await feedback_service.update_feedback(db,data,current_user)
-
+    return await feedback_service.update_feedback(db, data, current_user)

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, Sequence, Type, TypedDict, TypeVar
-from fastapi import HTTPException
+from typing import TYPE_CHECKING, Any, Generic, Sequence, TypeAlias, TypedDict, TypeVar
 
+from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination import Page
-from fastapi_pagination.ext.async_sqlalchemy import paginate
+from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_pagination.types import AsyncItemsTransformer
 from pydantic import BaseModel
-from sqlalchemy import DATE
-from sqlmodel import SQLModel, cast, desc, func, select
+from sqlmodel import SQLModel, desc, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 if TYPE_CHECKING:
@@ -20,13 +19,11 @@ CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
-class DateCount(TypedDict):
-    date: str
-    count: int
+DateCount: TypeAlias = tuple[str, int]
 
 
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
-    def __init__(self, model: Type[ModelType]):
+    def __init__(self, model: type[ModelType]):
         """
         CRUD object with default methods to Create, Read, Update, Delete (CRUD).
 
@@ -39,16 +36,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def get(self, db: AsyncSession, id: Any) -> ModelType | None:
         return await db.get(self.model, id)
-    
+
     async def get_one(self, db: AsyncSession, id: Any) -> ModelType:
         ret = await self.get(db, id)
         if not ret:
             raise HTTPException(404)
         return ret
 
-    async def gets(self, db: AsyncSession, *, offset: int = 0, limit: int = 100) -> list[ModelType]:
+    async def gets(self, db: AsyncSession, *, offset: int = 0, limit: int = 100) -> Sequence[ModelType]:
         stmt = select(self.model).offset(offset).limit(limit)
-        return (await db.exec(stmt)).all()  # type: ignore
+        return (await db.scalars(stmt)).all()
 
     async def get_page(
         self,
@@ -93,7 +90,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def create(self, db: AsyncSession, obj_in: CreateSchemaType) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)
-        db_obj = self.model(**obj_in_data)  # type: ignore
+        db_obj = self.model(**obj_in_data)
         return await self.add(db, db_obj)
 
     async def update(
@@ -120,40 +117,32 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return await self.delete(db, obj)
 
     async def count(self, db: AsyncSession) -> int:
-        stmt = select([func.count()]).select_from(self.model)
-        return (await db.exec(stmt)).one()  # type: ignore
+        stmt = select(func.count()).select_from(self.model)
+        return (await db.scalars(stmt)).one()
 
     async def count_if(self, db: AsyncSession, *where_clause) -> int:
-        stmt = select([func.count()]).select_from(self.model).where(*where_clause)
-        return (await db.exec(stmt)).one()  # type: ignore
+        stmt = select(func.count()).select_from(self.model).where(*where_clause)
+        return (await db.scalars(stmt)).one()
 
     async def count_by_date(self, db: AsyncSession, field: Any) -> list[DateCount]:
         stmt = (
             select(
-                [
-                    func.to_char(field, "YYYY-MM-DD").label("date"),
-                    func.count().label("count"),
-                ]
+                func.to_char(field, "YYYY-MM-DD").label("date"),
+                func.count().label("count"),
             )
             .select_from(self.model)
             .group_by("date")
-            .select()
         )
-        return (await db.exec(stmt)).all()  # type: ignore
+        return list((await db.exec(stmt)).all())
 
-    async def count_if_by_date(
-        self, db: AsyncSession, field: Any, *where_clause
-    ) -> list[DateCount]:
+    async def count_if_by_date(self, db: AsyncSession, field: Any, *where_clause) -> list[DateCount]:
         stmt = (
             select(
-                [
-                    func.to_char(field, "YYYY-MM-DD").label("date"),
-                    func.count().label("count"),
-                ]
+                func.to_char(field, "YYYY-MM-DD").label("date"),
+                func.count().label("count"),
             )
             .select_from(self.model)
             .where(*where_clause)
             .group_by("date")
-            .select()
         )
-        return (await db.exec(stmt)).all()  # type: ignore
+        return list((await db.exec(stmt)).all())

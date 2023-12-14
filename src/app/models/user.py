@@ -1,13 +1,10 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
-from pydantic import EmailStr
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.role_perm import PermRead
-
 if TYPE_CHECKING:
-    from . import Chat, Complaint, PermRead, Role, RoleRead, SharedUser
+    from . import Chat, Complaint, Role, RoleRead, SharedUser
 
 
 class UserBase(SQLModel):
@@ -32,10 +29,10 @@ class User(UserBase, table=True):
     chats: list["Chat"] = Relationship(back_populates="user")
     links: list["SharedUser"] = Relationship(back_populates="user")
     posted_complaints: list["Complaint"] = Relationship(
-        back_populates="user", sa_relationship_kwargs=dict(foreign_keys="Complaint.user_id")
+        back_populates="user", sa_relationship_kwargs={"foreign_keys": "Complaint.user_id"}
     )
     resolved_complaints: list["Complaint"] = Relationship(
-        back_populates="admin", sa_relationship_kwargs=dict(foreign_keys="Complaint.admin_id")
+        back_populates="admin", sa_relationship_kwargs={"foreign_keys": "Complaint.admin_id"}
     )
 
 
@@ -92,7 +89,3 @@ __all__ = [
     "UserCreate",
     "UserRegister",
 ]
-
-from .role_perm import RoleRead
-
-UserReadWithRole.update_forward_refs()

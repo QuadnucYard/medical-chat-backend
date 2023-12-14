@@ -1,9 +1,10 @@
 from logging import Logger
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi_pagination import Page
 from pydantic import EmailStr
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from fastapi_pagination import Page
 from app import crud, models
 from app.core.security import verify_password
 from app.routers import deps

@@ -1,9 +1,10 @@
 from typing import overload
+
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ai.pipeline import MedQAPipeline, PipelineResult
-from aiapp.models import IntentCount, EntityCount, WordCount
 from aiapp import crud
+from aiapp.models import EntityCount, IntentCount, WordCount
 
 pipeline = MedQAPipeline()
 

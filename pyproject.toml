@@ -1,0 +1,73 @@
+[tool.poetry]
+name = "medical-chat-server"
+version = "0.1.0"
+description = "Medical chat"
+authors = ["QuadnucYard <2380433991@qq.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+asyncpg = "^0.29.0"
+faker = "^20.1.0"
+fastapi = "^0.104.1"
+fastapi-pagination = "^0.12.13"
+more-itertools = "^10.1.0"
+pandas = "^2.1.3"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+psycopg = {extras = ["binary"], version = "^3.1.13"}
+pydantic = {extras = ["email"], version = "^2.5.2"}
+pydantic-settings = "^2.1.0"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+python-multipart = "^0.0.6"
+sqlmodel = "^0.0.14"
+uvicorn = "^0.23.2"
+aiohttp = "^3.9.1"
+colorlog = "^6.8.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.11.0"
+mypy = "^1.7.1"
+ruff = "^0.1.7"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+disallow_untyped_defs = false
+disallow_import_untyped = false
+
+[tool.ruff]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+line-length = 120
+
+[tool.ruff.lint]
+ignore = ["B008", "E711", "E712", "F403", "F405"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.isort]
+known-local-folder = ["ai", "aiapp", "app"]
+known-third-party = ["sqlmodel", "sqlalchemy", "pydantic", "fastapi"]
