@@ -36,7 +36,7 @@ class MessageRead(MessageBase):
 
 
 class MessageReadWithFeedback(MessageRead):
-    own_feedback: Optional["FeedbackRead"]
+    own_feedback: Optional["FeedbackRead"] = None
 
 
 class MessageCreate(MessageBase):

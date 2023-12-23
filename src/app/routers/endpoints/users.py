@@ -130,7 +130,9 @@ async def read_user_by_id(
     Get a specific user by id.
     """
     user = await crud.user.get(db, id=user_id)
-    if user == current_user:
+    if not user:
+        raise HTTPException(status_code=400, detail="The user does not exist!")
+    if user.id == current_user.id:
         return user
     if not crud.user.is_superuser(current_user):
         raise HTTPException(status_code=400, detail="The user doesn't have enough privileges")

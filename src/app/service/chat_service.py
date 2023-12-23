@@ -10,13 +10,8 @@ from app.core.config import settings
 from app.db.utils import from_orm_async
 from app.models.chat import Chat, ChatRead, ChatReadWithMessages
 from app.models.feedback import Feedback, FeedbackRead
-from app.models.message import (
-    Message,
-    MessageCreate,
-    MessageReadWithFeedback,
-    MessageType,
-    NoteCreate,
-)
+from app.models.message import Message, MessageCreate, MessageType, NoteCreate
+from app.models.shared_link import SharedLinkRead
 from app.models.user import User
 from app.service import share_service
 from app.utils.sqlutils import is_today, is_yesterday, time_now
@@ -24,12 +19,15 @@ from app.utils.statutils import counter_helper
 
 
 async def to_read(db: AsyncSession, chat: Chat) -> ChatRead:
+    # BUG model_validate 的 update 会导致递归超限
     link = await share_service.get_chat_link(db, chat)
-    return await db.run_sync(lambda _: ChatRead.model_validate(chat, update={"link": link}))
+    chat_read = await from_orm_async(db, ChatRead, chat)
+    chat_read.link = SharedLinkRead.model_validate(link) if link else None
+    return chat_read
 
 
 async def to_reads(db: AsyncSession, chats: Sequence[Chat]) -> list[ChatRead]:
-    return [await to_read(db, c) for c in chats]
+    return [await to_read(db, c) for c in chats[:10]]
 
 
 def to_reads_wrapped(db: AsyncSession):
@@ -121,21 +119,12 @@ async def get_chat_with_feedbacks(db: AsyncSession, chat: Chat, user: User):
     def feedback_orm(fb: Feedback | None):
         return FeedbackRead.model_validate(fb) if fb else None
 
-    return await from_orm_async(
-        db,
-        ChatReadWithMessages,
-        chat,
-        {
-            "messages": [
-                MessageReadWithFeedback.model_validate(
-                    msg,
-                    update={"own_feedback": feedback_orm(await crud.feedback.get(db, (msg.id, user.id)))},
-                )
-                for msg in await db.run_sync(lambda _: chat.messages)
-            ],
-            "link": await share_service.get_chat_link(db, chat),
-        },
-    )
+    # BUG model_validate 的 update 会导致递归超限
+    chat_read = await from_orm_async(db, ChatReadWithMessages, chat)
+    for msg in chat_read.messages:
+        msg.own_feedback = feedback_orm(await crud.feedback.get(db, (msg.id, user.id)))
+    chat_read.link = await share_service.get_chat_link(db, chat)
+    return chat_read
 
 
 async def update_title(db: AsyncSession, chat: Chat, title: str):
