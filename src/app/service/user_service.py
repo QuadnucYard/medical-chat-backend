@@ -10,7 +10,7 @@ async def get_temporal_stats(db: AsyncSession):
     return await counter_helper(
         db,
         (crud.user.count_by_register_date, "register"),
-        (crud.user.count_by_login_date, "login"), # This is no use, since it's variable
+        (crud.user.count_by_login_date, "login"),  # This is no use, since it's variable
     )
 
 

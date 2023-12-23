@@ -48,12 +48,8 @@ async def get_stats(db: AsyncSession):
         "total_dislike": await crud.feedback.count_if(db, Feedback.mark_dislike),
         "total_comment": await crud.feedback.count_if(db, func.length(Feedback.content) > 0),
         "total_today": await crud.feedback.count_if(db, is_today(Feedback.update_time)),
-        "total_like_today": await crud.feedback.count_if(
-            db, Feedback.mark_like, is_today(Feedback.update_time)
-        ),
-        "total_dislike_today": await crud.feedback.count_if(
-            db, Feedback.mark_dislike, is_today(Feedback.update_time)
-        ),
+        "total_like_today": await crud.feedback.count_if(db, Feedback.mark_like, is_today(Feedback.update_time)),
+        "total_dislike_today": await crud.feedback.count_if(db, Feedback.mark_dislike, is_today(Feedback.update_time)),
         "total_comment_today": await crud.feedback.count_if(
             db, func.length(Feedback.content) > 0, is_today(Feedback.update_time)
         ),

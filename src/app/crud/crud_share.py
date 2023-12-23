@@ -9,9 +9,7 @@ from app.models import SharedLink, SharedLinkCreate, SharedLinkUpdate, SharedUse
 
 class CRUDShare(CRUDBase[SharedLink, SharedLinkCreate, SharedLinkUpdate]):
     async def is_user_shared(self, db: AsyncSession, user_id: int, link_id: str):
-        stmt = select(SharedUser).where(
-            SharedUser.user_id == user_id, SharedUser.link_id == link_id
-        )
+        stmt = select(SharedUser).where(SharedUser.user_id == user_id, SharedUser.link_id == link_id)
         return (await db.exec(stmt)).first() is not None
 
     async def get_shared_times(self, db: AsyncSession, link_id: str):

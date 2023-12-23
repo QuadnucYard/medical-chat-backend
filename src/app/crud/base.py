@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, Sequence, TypeAlias, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Sequence, TypeAlias, TypeVar
 
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder

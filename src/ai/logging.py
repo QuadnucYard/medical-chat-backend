@@ -9,17 +9,17 @@ def _init_logger():
     logger = colorlog.getLogger("medtalk-kbqa")
 
     log_colors_config = {
-        'DEBUG': 'white',  # cyan white
-        'INFO': 'green',
-        'WARNING': 'yellow',
-        'ERROR': 'red',
-        'CRITICAL': 'bold_red',
+        "DEBUG": "white",  # cyan white
+        "INFO": "green",
+        "WARNING": "yellow",
+        "ERROR": "red",
+        "CRITICAL": "bold_red",
     }
 
     # 输出到控制台
     console_handler = colorlog.StreamHandler()
     # 输出到文件
-    file_handler = logging.FileHandler(filename="../medtalk-kbqa.log", mode='a', encoding='utf8')
+    file_handler = logging.FileHandler(filename="../medtalk-kbqa.log", mode="a", encoding="utf8")
 
     logger.setLevel(logging.DEBUG)
     console_handler.setLevel(logging.INFO)
@@ -27,13 +27,12 @@ def _init_logger():
 
     # 日志输出格式
     console_formatter = colorlog.ColoredFormatter(
-        fmt='%(log_color)s[%(asctime)s] [%(levelname)s] %(message)s', log_colors=log_colors_config
+        fmt="%(log_color)s[%(asctime)s] [%(levelname)s] %(message)s", log_colors=log_colors_config
     )
-    file_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] %(message)s', )
+    file_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s")
 
     console_handler.setFormatter(console_formatter)
     file_handler.setFormatter(file_formatter)
-
 
     if not logger.handlers:
         logger.addHandler(console_handler)
@@ -55,7 +54,7 @@ def colored(
     bg: int | tuple[int, int, int] | None = None,
     bright: bool = False,
     underline: bool = False,
-    flash: bool = False
+    flash: bool = False,
 ) -> str:
     code: list[int] = []
     if bright:
@@ -75,9 +74,9 @@ def colored(
     return f"\033[{';'.join(map(str, code))}m{s}\33[0m"
 
 
-if __name__ == '__main__':
-    logger.debug('debug')
-    logger.info('info')
-    logger.warning('warning')
-    logger.error('error')
-    logger.critical('critical')
+if __name__ == "__main__":
+    logger.debug("debug")
+    logger.info("info")
+    logger.warning("warning")
+    logger.error("error")
+    logger.critical("critical")

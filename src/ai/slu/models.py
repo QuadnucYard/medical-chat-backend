@@ -18,9 +18,7 @@ class BertMultiHeadJointClassification(BertPreTrainedModel):
 
         self.bert = BertModel(config, add_pooling_layer=True)
         classifier_dropout = (
-            config.classifier_dropout
-            if config.classifier_dropout is not None
-            else config.hidden_dropout_prob
+            config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
 
         self.dropout = nn.Dropout(classifier_dropout)
@@ -80,9 +78,7 @@ class BertMultiHeadJointClassification(BertPreTrainedModel):
         if token_labels is not None:
             loss_fct = nn.CrossEntropyLoss()
             token_loss_list = [
-                loss_fct(
-                    token_logits[i].view(-1, self.token_label_nums[i]), token_labels[i].view(-1)
-                ).unsqueeze(0)
+                loss_fct(token_logits[i].view(-1, self.token_label_nums[i]), token_labels[i].view(-1)).unsqueeze(0)
                 for i in range(self.token_head_num)
             ]
             loss = torch.cat(token_loss_list).sum()
@@ -90,9 +86,7 @@ class BertMultiHeadJointClassification(BertPreTrainedModel):
         if seq_labels is not None:
             loss_fct = nn.CrossEntropyLoss()
             seq_loss_list = [
-                loss_fct(
-                    seq_logits[i].view(-1, self.seq_label_nums[i]), seq_labels[i].view(-1)
-                ).unsqueeze(0)
+                loss_fct(seq_logits[i].view(-1, self.seq_label_nums[i]), seq_labels[i].view(-1)).unsqueeze(0)
                 for i in range(self.seq_head_num)
             ]
             seq_loss = torch.cat(seq_loss_list).sum()

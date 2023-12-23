@@ -57,9 +57,7 @@ class JointIntentSlotDetector:
 
         tokenizer = BertTokenizer.from_pretrained(tokenizer_path)
 
-        model = JointBert.from_pretrained(
-            model_path, slot_label_num=len(slot_dict), intent_label_num=len(intent_dict)
-        )
+        model = JointBert.from_pretrained(model_path, slot_label_num=len(slot_dict), intent_label_num=len(intent_dict))
 
         return cls(cast(JointBert, model), tokenizer, intent_dict, slot_dict, **kwargs)
 
@@ -96,9 +94,7 @@ class JointIntentSlotDetector:
         mask : [batch, seq_len]
         """
         return [
-            self._extract_slots_from_labels_for_one_seq(
-                input_ids[i], slot_labels[i], mask[i] if mask else None
-            )
+            self._extract_slots_from_labels_for_one_seq(input_ids[i], slot_labels[i], mask[i] if mask else None)
             for i in range(len(input_ids))
         ]
 
@@ -119,9 +115,7 @@ class JointIntentSlotDetector:
         return decoder(intent_ids).tolist()
 
     def _match_tokens(self, text: str, input_ids: list[int]):
-        input_tokens = [
-            self.tokenizer.decode(x).replace(" ", "").removeprefix("##") for x in input_ids
-        ]
+        input_tokens = [self.tokenizer.decode(x).replace(" ", "").removeprefix("##") for x in input_ids]
         i = 0
         res = list[int]()
         for token in input_tokens:
@@ -168,9 +162,7 @@ class JointIntentSlotDetector:
         slot_labels = self._predict_slot_labels(slot_probs)
         intent_labels = self._predict_intent_labels(intent_probs)
 
-        slot_values = self._extract_slots_from_labels(
-            inputs["input_ids"], slot_labels, inputs["attention_mask"]
-        )
+        slot_values = self._extract_slots_from_labels(inputs["input_ids"], slot_labels, inputs["attention_mask"])
 
         outputs = [
             DetectResult(

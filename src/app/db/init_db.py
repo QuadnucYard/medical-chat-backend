@@ -44,26 +44,14 @@ class Init:
         return batch
 
     async def init_perms(self, db: AsyncSession):
-        perm1 = await crud.perm.create(
-            db, PermCreate(name=Permission.ChatAccess.value, desc="聊天访问", route="")
-        )
-        perm2 = await crud.perm.create(
-            db, PermCreate(name=Permission.UserMngr.value, desc="用户管理", route="")
-        )
-        perm3 = await crud.perm.create(
-            db, PermCreate(name=Permission.ChatMngr.value, desc="聊天管理", route="")
-        )
-        perm4 = await crud.perm.create(
-            db, PermCreate(name=Permission.OpMngr.value, desc="运营管理", route="")
-        )
-        perm5 = await crud.perm.create(
-            db, PermCreate(name=Permission.KBMngr.value, desc="知识库管理", route="")
-        )
-        RoleCreate.update_forward_refs()
+        perm1 = await crud.perm.create(db, PermCreate(name=Permission.ChatAccess.value, desc="聊天访问", route=""))
+        perm2 = await crud.perm.create(db, PermCreate(name=Permission.UserMngr.value, desc="用户管理", route=""))
+        perm3 = await crud.perm.create(db, PermCreate(name=Permission.ChatMngr.value, desc="聊天管理", route=""))
+        perm4 = await crud.perm.create(db, PermCreate(name=Permission.OpMngr.value, desc="运营管理", route=""))
+        perm5 = await crud.perm.create(db, PermCreate(name=Permission.KBMngr.value, desc="知识库管理", route=""))
+        RoleCreate.model_rebuild()
         role1 = await crud.role.add(db, Role(name="Normal User", label="普通用户", perms=[perm1]))
-        role2 = await crud.role.add(
-            db, Role(name="Super User", label="管理员", perms=[perm1, perm2, perm3, perm5])
-        )
+        role2 = await crud.role.add(db, Role(name="Super User", label="管理员", perms=[perm1, perm2, perm3, perm5]))
         role3 = await crud.role.add(
             db,
             Role(name="Super Super User", label="超级管理员", perms=[perm1, perm2, perm3, perm4, perm5]),
@@ -120,9 +108,7 @@ class Init:
 
     async def init_chats(self, db: AsyncSession, num: int):
         self.chats = [
-            await crud.chat.add(
-                db, Chat(user=random.choice(self.users), title=self.fake.sentence())
-            )
+            await crud.chat.add(db, Chat(user=random.choice(self.users), title=self.fake.sentence()))
             for _ in range(num)
         ]
 
@@ -148,8 +134,7 @@ class Init:
         self.messages = list[Message]()
 
         self.chats = [
-            Chat(user=random.choice(self.users), title="", create_time=self.get_datetime())
-            for _ in range(num_chats)
+            Chat(user=random.choice(self.users), title="", create_time=self.get_datetime()) for _ in range(num_chats)
         ]
         await self.add_batch(db, self.chats)
 
