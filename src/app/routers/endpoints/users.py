@@ -6,7 +6,6 @@ from pydantic import EmailStr
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud, models
-from app.core.security import verify_password
 from app.routers import deps
 from app.service import user_service
 from app.utils.futils import save_file
@@ -82,27 +81,17 @@ async def update_user_me(
     email: EmailStr = Form(None),
     phone: str = Form(None),
     name: str = Form(None),
-    password: str = Form(),
-    password2: str = Form(None),
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
     """
     Update own user.
     """
-    # check password
-    if not password:
-        raise HTTPException(403, "You should send password!")
-    if not verify_password(password, current_user.hashed_password):
-        raise HTTPException(403, "The password is incorrect!")
-    if password2 and password != password2:
-        raise HTTPException(403, "The passwords are inconsistent!")
     user_in = models.UserUpdate(
         username=username or current_user.username,
         email=email or current_user.email,
         phone=phone or current_user.phone,
         name=name or current_user.name,
         avatar_url=current_user.avatar_url,
-        password=password,
     )
     user = await crud.user.update(db, db_obj=current_user, obj_in=user_in)
     return user

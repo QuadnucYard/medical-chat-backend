@@ -8,7 +8,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
+aiohttp = "^3.9.1"
 asyncpg = "^0.29.0"
+bcrypt = "4.0.1"
+colorlog = "^6.8.0"
 faker = "^20.1.0"
 fastapi = "^0.104.1"
 fastapi-pagination = "^0.12.13"
@@ -22,8 +25,6 @@ python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 python-multipart = "^0.0.6"
 sqlmodel = "^0.0.14"
 uvicorn = "^0.23.2"
-aiohttp = "^3.9.1"
-colorlog = "^6.8.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.11.0"

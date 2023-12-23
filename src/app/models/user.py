@@ -58,8 +58,6 @@ class UserUpdate(SQLModel):
     phone: str | None = None
     name: str | None = None
     avatar_url: str | None = None
-    password: str | None = None
-    password2: str | None = None
 
 
 class UserCreate(SQLModel):

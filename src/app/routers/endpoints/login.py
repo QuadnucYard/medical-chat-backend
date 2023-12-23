@@ -82,13 +82,30 @@ async def logout():
     return response
 
 
+@router.post("/auth/password-change", response_model=models.Msg)
+async def change_password(
+    old_password: str = Form(),
+    new_password: str = Form(),
+    current_user: models.User = Depends(deps.get_current_active_user),
+    db: AsyncSession = Depends(deps.get_db),
+):
+    # check password
+    if not old_password or not new_password:
+        raise HTTPException(400, "You should send password!")
+    if not security.verify_password(old_password, current_user.hashed_password):
+        raise HTTPException(400, "The password is incorrect!")
+    current_user.hashed_password = security.get_password_hash(new_password)
+    await crud.user.add(db, current_user)
+    return {"msg": "Password updated successfully"}
+
+
 '''
-@router.post("/password-recovery/{email}", response_model=schemas.Msg)
-def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
+@router.post("/auth/password-recovery/{email}", response_model=models.Msg)
+async def recover_password(username: str, db: AsyncSession = Depends(deps.get_db)):
     """
     Password Recovery
     """
-    user = crud.user.get_by_email(db, email=email)
+    user = await crud.user.get_by_username(db, username=username)
 
     if not user:
         raise HTTPException(
@@ -100,12 +117,13 @@ def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
         email_to=user.email, email=email, token=password_reset_token
     )
     return {"msg": "Password recovery email sent"}
-
-@router.post("/reset-password/", response_model=schemas.Msg)
-def reset_password(
+'''
+'''
+@router.post("/auth/password-reset/", response_model=models.Msg)
+async def reset_password(
     token: str = Body(...),
     new_password: str = Body(...),
-    db: Session = Depends(deps.get_db),
+    db: AsyncSession = Depends(deps.get_db),
 ) -> Any:
     """
     Reset password

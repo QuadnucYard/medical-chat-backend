@@ -2,6 +2,7 @@ from .chat import *
 from .complaint import *
 from .feedback import *
 from .message import *
+from .msg import Msg
 from .page import PageParams
 from .recommendation import *
 from .role_perm import *
